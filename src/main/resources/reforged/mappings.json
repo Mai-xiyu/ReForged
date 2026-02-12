@@ -1,0 +1,282 @@
+{
+  "comment": "ReForged — Comprehensive NeoForge 1.21.1 → Forge 1.21.1 mapping table. Dotted notation; converted to internal (slash) at load time.",
+  "packages": [
+    {
+      "comment": "Event bus core API",
+      "from": "net.neoforged.bus.api.",
+      "to": "net.minecraftforge.eventbus.api."
+    },
+    {
+      "comment": "FML core — mod loading, lifecycle, config",
+      "from": "net.neoforged.fml.",
+      "to": "net.minecraftforge.fml."
+    },
+    {
+      "comment": "API markers — @OnlyIn, Dist",
+      "from": "net.neoforged.api.",
+      "to": "net.minecraftforge.api."
+    },
+    {
+      "comment": "Common — extensions, capabilities (old-style), tags, util",
+      "from": "net.neoforged.neoforge.common.",
+      "to": "net.minecraftforge.common."
+    },
+    {
+      "comment": "Events — all game events (tick, entity, player, block, world, server, etc.)",
+      "from": "net.neoforged.neoforge.event.",
+      "to": "net.minecraftforge.event."
+    },
+    {
+      "comment": "Registries — DeferredRegister, ForgeRegistries, IForgeRegistry, etc.",
+      "from": "net.neoforged.neoforge.registries.",
+      "to": "net.minecraftforge.registries."
+    },
+    {
+      "comment": "Client — rendering, models, particles, GUI, events",
+      "from": "net.neoforged.neoforge.client.",
+      "to": "net.minecraftforge.client."
+    },
+    {
+      "comment": "Server-side utilities",
+      "from": "net.neoforged.neoforge.server.",
+      "to": "net.minecraftforge.server."
+    },
+    {
+      "comment": "Fluids — FluidStack, IFluidHandler, FluidType, etc.",
+      "from": "net.neoforged.neoforge.fluids.",
+      "to": "net.minecraftforge.fluids."
+    },
+    {
+      "comment": "Items — IItemHandler and related",
+      "from": "net.neoforged.neoforge.items.",
+      "to": "net.minecraftforge.items."
+    },
+    {
+      "comment": "Energy — IEnergyStorage, EnergyStorage",
+      "from": "net.neoforged.neoforge.energy.",
+      "to": "net.minecraftforge.energy."
+    },
+    {
+      "comment": "Data providers — datagen",
+      "from": "net.neoforged.neoforge.data.",
+      "to": "net.minecraftforge.data."
+    },
+    {
+      "comment": "Game testing",
+      "from": "net.neoforged.neoforge.gametest.",
+      "to": "net.minecraftforge.gametest."
+    },
+    {
+      "comment": "Resource pack/data pack —  forge resource utilities",
+      "from": "net.neoforged.neoforge.resource.",
+      "to": "net.minecraftforge.resource."
+    },
+    {
+      "comment": "Entity extensions",
+      "from": "net.neoforged.neoforge.entity.",
+      "to": "net.minecraftforge.entity."
+    },
+    {
+      "comment": "World/level extensions",
+      "from": "net.neoforged.neoforge.world.",
+      "to": "net.minecraftforge.world."
+    },
+    {
+      "comment": "Forge SPI / service locating",
+      "from": "net.neoforged.neoforgespi.",
+      "to": "net.minecraftforge.forgespi."
+    },
+    {
+      "comment": "Network — mapped to shim package for structural differences",
+      "from": "net.neoforged.neoforge.network.",
+      "to": "org.xiyu.reforged.shim.network."
+    },
+    {
+      "comment": "Data attachments — mapped to shim (NeoForge-only API)",
+      "from": "net.neoforged.neoforge.attachment.",
+      "to": "org.xiyu.reforged.shim.attachment."
+    },
+    {
+      "comment": "New-style capabilities — mapped to shim (differs from Forge caps)",
+      "from": "net.neoforged.neoforge.capabilities.",
+      "to": "org.xiyu.reforged.shim.capabilities."
+    }
+  ],
+  "classes": [
+    {
+      "comment": "SHIM: NeoForge main class → our shim (provides EVENT_BUS)",
+      "from": "net.neoforged.neoforge.common.NeoForge",
+      "to": "org.xiyu.reforged.shim.NeoForgeShim"
+    },
+    {
+      "comment": "DeferredHolder → RegistryObject (bytecode API-compatible via .get())",
+      "from": "net.neoforged.neoforge.registries.DeferredHolder",
+      "to": "net.minecraftforge.registries.RegistryObject"
+    },
+    {
+      "comment": "DeferredRegister (same create() API for ResourceKey variant)",
+      "from": "net.neoforged.neoforge.registries.DeferredRegister",
+      "to": "net.minecraftforge.registries.DeferredRegister"
+    },
+    {
+      "comment": "IEventBus — direct match",
+      "from": "net.neoforged.bus.api.IEventBus",
+      "to": "net.minecraftforge.eventbus.api.IEventBus"
+    },
+    {
+      "comment": "SubscribeEvent annotation",
+      "from": "net.neoforged.bus.api.SubscribeEvent",
+      "to": "net.minecraftforge.eventbus.api.SubscribeEvent"
+    },
+    {
+      "comment": "Event base class",
+      "from": "net.neoforged.bus.api.Event",
+      "to": "net.minecraftforge.eventbus.api.Event"
+    },
+    {
+      "comment": "EventPriority enum",
+      "from": "net.neoforged.bus.api.EventPriority",
+      "to": "net.minecraftforge.eventbus.api.EventPriority"
+    },
+    {
+      "comment": "ICancellableEvent (NeoForge) → Event.isCancelable() (Forge uses method)",
+      "from": "net.neoforged.bus.api.ICancellableEvent",
+      "to": "net.minecraftforge.eventbus.api.Event"
+    },
+    {
+      "comment": "@Mod annotation",
+      "from": "net.neoforged.fml.common.Mod",
+      "to": "net.minecraftforge.fml.common.Mod"
+    },
+    {
+      "comment": "EventBusSubscriber annotation",
+      "from": "net.neoforged.fml.common.EventBusSubscriber",
+      "to": "net.minecraftforge.fml.common.Mod$EventBusSubscriber"
+    },
+    {
+      "comment": "ModLoadingContext",
+      "from": "net.neoforged.fml.ModLoadingContext",
+      "to": "net.minecraftforge.fml.ModLoadingContext"
+    },
+    {
+      "comment": "FMLJavaModLoadingContext",
+      "from": "net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext",
+      "to": "net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext"
+    },
+    {
+      "comment": "ModContainer",
+      "from": "net.neoforged.fml.ModContainer",
+      "to": "net.minecraftforge.fml.ModContainer"
+    },
+    {
+      "comment": "ModList",
+      "from": "net.neoforged.fml.ModList",
+      "to": "net.minecraftforge.fml.ModList"
+    },
+    {
+      "comment": "ModConfig",
+      "from": "net.neoforged.fml.config.ModConfig",
+      "to": "net.minecraftforge.fml.config.ModConfig"
+    },
+    {
+      "comment": "ModConfigSpec (NeoForge name) → ForgeConfigSpec (Forge name)",
+      "from": "net.neoforged.neoforge.common.ModConfigSpec",
+      "to": "net.minecraftforge.common.ForgeConfigSpec"
+    },
+    {
+      "comment": "ModConfigSpec$Builder → ForgeConfigSpec$Builder",
+      "from": "net.neoforged.neoforge.common.ModConfigSpec$Builder",
+      "to": "net.minecraftforge.common.ForgeConfigSpec$Builder"
+    },
+    {
+      "comment": "FMLCommonSetupEvent",
+      "from": "net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent",
+      "to": "net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent"
+    },
+    {
+      "comment": "FMLClientSetupEvent",
+      "from": "net.neoforged.fml.event.lifecycle.FMLClientSetupEvent",
+      "to": "net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent"
+    },
+    {
+      "comment": "FMLDedicatedServerSetupEvent",
+      "from": "net.neoforged.fml.event.lifecycle.FMLDedicatedServerSetupEvent",
+      "to": "net.minecraftforge.fml.event.lifecycle.FMLDedicatedServerSetupEvent"
+    },
+    {
+      "comment": "InterModEnqueueEvent",
+      "from": "net.neoforged.fml.event.lifecycle.InterModEnqueueEvent",
+      "to": "net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent"
+    },
+    {
+      "comment": "InterModProcessEvent",
+      "from": "net.neoforged.fml.event.lifecycle.InterModProcessEvent",
+      "to": "net.minecraftforge.fml.event.lifecycle.InterModProcessEvent"
+    },
+    {
+      "comment": "RegisterEvent",
+      "from": "net.neoforged.neoforge.registries.RegisterEvent",
+      "to": "net.minecraftforge.registries.RegisterEvent"
+    },
+    {
+      "comment": "ForgeRegistries",
+      "from": "net.neoforged.neoforge.registries.ForgeRegistries",
+      "to": "net.minecraftforge.registries.ForgeRegistries"
+    },
+    {
+      "comment": "IForgeRegistry",
+      "from": "net.neoforged.neoforge.registries.IForgeRegistry",
+      "to": "net.minecraftforge.registries.IForgeRegistry"
+    },
+    {
+      "comment": "RegistryObject (if referenced directly)",
+      "from": "net.neoforged.neoforge.registries.RegistryObject",
+      "to": "net.minecraftforge.registries.RegistryObject"
+    },
+    {
+      "comment": "CreativeModeTab.Output → Forge equivalent",
+      "from": "net.neoforged.neoforge.common.CreativeModeTabRegistry",
+      "to": "org.xiyu.reforged.shim.CreativeTabShim"
+    },
+    {
+      "comment": "MinecraftForge (if referenced by NeoForge mods via compat)",
+      "from": "net.neoforged.neoforge.common.MinecraftForge",
+      "to": "net.minecraftforge.common.MinecraftForge"
+    },
+    {
+      "comment": "ForgeConfigSpec (some NeoForge mods still reference this name)",
+      "from": "net.neoforged.neoforge.common.ForgeConfigSpec",
+      "to": "net.minecraftforge.common.ForgeConfigSpec"
+    },
+    {
+      "comment": "ForgeConfigSpec$Builder (legacy reference)",
+      "from": "net.neoforged.neoforge.common.ForgeConfigSpec$Builder",
+      "to": "net.minecraftforge.common.ForgeConfigSpec$Builder"
+    },
+    {
+      "comment": "ItemLike marker interface",
+      "from": "net.neoforged.neoforge.common.util.ItemLike",
+      "to": "net.minecraftforge.common.util.ItemLike"
+    },
+    {
+      "comment": "Lazy util",
+      "from": "net.neoforged.neoforge.common.util.Lazy",
+      "to": "net.minecraftforge.common.util.Lazy"
+    },
+    {
+      "comment": "InterModComms",
+      "from": "net.neoforged.fml.InterModComms",
+      "to": "net.minecraftforge.fml.InterModComms"
+    },
+    {
+      "comment": "Dist enum",
+      "from": "net.neoforged.api.distmarker.Dist",
+      "to": "net.minecraftforge.api.distmarker.Dist"
+    },
+    {
+      "comment": "OnlyIn annotation",
+      "from": "net.neoforged.api.distmarker.OnlyIn",
+      "to": "net.minecraftforge.api.distmarker.OnlyIn"
+    }
+  ]
+}
