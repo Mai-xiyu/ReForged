@@ -67,6 +67,10 @@ repositories {
         name = 'SpongePowered'
         url = 'https://repo.spongepowered.org/maven'
     }
+    maven {
+        name = "Modrinth"
+        url "https://api.modrinth.com/maven"
+    }
 }
 
 dependencies {
@@ -85,6 +89,12 @@ dependencies {
 
     // jopt-simple
     implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } }
+
+    // test forge
+    runtimeOnly "maven.modrinth:jei:rsCHKGSa"
+
+    // test (neo)forge
+    runtimeOnly "maven.modrinth:jade:15.10.5+neoforge"
 }
 
 tasks.named('processResources', ProcessResources).configure {
