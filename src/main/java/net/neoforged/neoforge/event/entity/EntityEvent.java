@@ -9,6 +9,11 @@ import net.neoforged.bus.api.Event;
 public class EntityEvent extends Event {
     private final Entity entity;
 
+    /** Required by Forge's EventListenerHelper */
+    public EntityEvent() {
+        this.entity = null;
+    }
+
     public EntityEvent(Entity entity) {
         this.entity = entity;
     }
@@ -21,8 +26,10 @@ public class EntityEvent extends Event {
     public Entity getEntity() { return entity; }
 
     public static class EnteringSection extends EntityEvent {
-        private final long packedOldPos;
-        private final long packedNewPos;
+        private long packedOldPos;
+        private long packedNewPos;
+
+        public EnteringSection() {}
 
         public EnteringSection(Entity entity, long packedOldPos, long packedNewPos) {
             super(entity);
@@ -42,6 +49,7 @@ public class EntityEvent extends Event {
     }
 
     public static class Size extends EntityEvent {
+        public Size() {}
         public Size(Entity entity) { super(entity); }
     }
 }

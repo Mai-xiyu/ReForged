@@ -22,7 +22,11 @@ import org.jetbrains.annotations.Nullable;
  * </ol>
  */
 public abstract class ScreenEvent extends Event {
-    private final Screen screen;
+    private Screen screen;
+
+    protected ScreenEvent() {
+        this.screen = null;
+    }
 
     protected ScreenEvent(Screen screen) {
         this.screen = Objects.requireNonNull(screen);
@@ -34,9 +38,11 @@ public abstract class ScreenEvent extends Event {
 
     // ── Init ──────────────────────────────────────────────
     public static abstract class Init extends ScreenEvent {
-        private final Consumer<GuiEventListener> add;
-        private final Consumer<GuiEventListener> remove;
-        private final List<GuiEventListener> listenerList;
+        private Consumer<GuiEventListener> add;
+        private Consumer<GuiEventListener> remove;
+        private List<GuiEventListener> listenerList;
+
+        protected Init() { super(); }
 
         protected Init(Screen screen, List<GuiEventListener> listenerList,
                         Consumer<GuiEventListener> add, Consumer<GuiEventListener> remove) {
@@ -51,6 +57,9 @@ public abstract class ScreenEvent extends Event {
         public void removeListener(GuiEventListener listener) { remove.accept(listener); }
 
         public static class Pre extends Init implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, List<GuiEventListener> list,
                        Consumer<GuiEventListener> add, Consumer<GuiEventListener> remove) {
                 super(screen, list, add, remove);
@@ -63,6 +72,9 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends Init {
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
+
             public Post(Screen screen, List<GuiEventListener> list,
                         Consumer<GuiEventListener> add, Consumer<GuiEventListener> remove) {
                 super(screen, list, add, remove);
@@ -77,10 +89,12 @@ public abstract class ScreenEvent extends Event {
 
     // ── Render ────────────────────────────────────────────
     public static abstract class Render extends ScreenEvent {
-        private final GuiGraphics guiGraphics;
-        private final int mouseX;
-        private final int mouseY;
-        private final float partialTick;
+        private GuiGraphics guiGraphics;
+        private int mouseX;
+        private int mouseY;
+        private float partialTick;
+
+        protected Render() { super(); }
 
         protected Render(Screen screen, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             super(screen);
@@ -96,6 +110,9 @@ public abstract class ScreenEvent extends Event {
         public float getPartialTick() { return partialTick; }
 
         public static class Pre extends Render implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
                 super(screen, guiGraphics, mouseX, mouseY, partialTick);
             }
@@ -107,6 +124,9 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends Render {
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
+
             public Post(Screen screen, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
                 super(screen, guiGraphics, mouseX, mouseY, partialTick);
             }
@@ -120,7 +140,10 @@ public abstract class ScreenEvent extends Event {
 
     // ── BackgroundRendered ────────────────────────────────
     public static class BackgroundRendered extends ScreenEvent {
-        private final GuiGraphics guiGraphics;
+        private GuiGraphics guiGraphics;
+
+        /** Required by Forge's EventListenerHelper */
+        public BackgroundRendered() { super(); }
 
         public BackgroundRendered(Screen screen, GuiGraphics guiGraphics) {
             super(screen);
@@ -137,9 +160,12 @@ public abstract class ScreenEvent extends Event {
 
     // ── RenderInventoryMobEffects ─────────────────────────
     public static class RenderInventoryMobEffects extends ScreenEvent implements ICancellableEvent {
-        private final int availableSpace;
+        private int availableSpace;
         private boolean compact;
         private int horizontalOffset;
+
+        /** Required by Forge's EventListenerHelper */
+        public RenderInventoryMobEffects() { super(); }
 
         public RenderInventoryMobEffects(Screen screen, int availableSpace, boolean compact, int horizontalOffset) {
             super(screen);
@@ -165,8 +191,10 @@ public abstract class ScreenEvent extends Event {
 
     // ── MouseInput (private base) ─────────────────────────
     private static abstract class MouseInput extends ScreenEvent {
-        private final double mouseX;
-        private final double mouseY;
+        private double mouseX;
+        private double mouseY;
+
+        protected MouseInput() { super(); }
 
         protected MouseInput(Screen screen, double mouseX, double mouseY) {
             super(screen);
@@ -180,7 +208,9 @@ public abstract class ScreenEvent extends Event {
 
     // ── MouseButtonPressed ────────────────────────────────
     public static abstract class MouseButtonPressed extends MouseInput {
-        private final int button;
+        private int button;
+
+        protected MouseButtonPressed() { super(); }
 
         public MouseButtonPressed(Screen screen, double mouseX, double mouseY, int button) {
             super(screen, mouseX, mouseY);
@@ -190,6 +220,9 @@ public abstract class ScreenEvent extends Event {
         public int getButton() { return button; }
 
         public static class Pre extends MouseButtonPressed implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, double mouseX, double mouseY, int button) {
                 super(screen, mouseX, mouseY, button);
             }
@@ -200,8 +233,11 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends MouseButtonPressed {
-            private final boolean handled;
+            private boolean handled;
             private ClickResult clickResult = ClickResult.DEFAULT;
+
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
 
             public Post(Screen screen, double mouseX, double mouseY, int button, boolean handled) {
                 super(screen, mouseX, mouseY, button);
@@ -228,7 +264,9 @@ public abstract class ScreenEvent extends Event {
 
     // ── MouseButtonReleased ───────────────────────────────
     public static abstract class MouseButtonReleased extends MouseInput {
-        private final int button;
+        private int button;
+
+        protected MouseButtonReleased() { super(); }
 
         public MouseButtonReleased(Screen screen, double mouseX, double mouseY, int button) {
             super(screen, mouseX, mouseY);
@@ -238,6 +276,9 @@ public abstract class ScreenEvent extends Event {
         public int getButton() { return button; }
 
         public static class Pre extends MouseButtonReleased implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, double mouseX, double mouseY, int button) {
                 super(screen, mouseX, mouseY, button);
             }
@@ -248,8 +289,11 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends MouseButtonReleased {
-            private final boolean handled;
+            private boolean handled;
             private ReleaseResult releaseResult = ReleaseResult.DEFAULT;
+
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
 
             public Post(Screen screen, double mouseX, double mouseY, int button, boolean handled) {
                 super(screen, mouseX, mouseY, button);
@@ -276,9 +320,11 @@ public abstract class ScreenEvent extends Event {
 
     // ── MouseDragged ──────────────────────────────────────
     public static abstract class MouseDragged extends MouseInput {
-        private final int mouseButton;
-        private final double dragX;
-        private final double dragY;
+        private int mouseButton;
+        private double dragX;
+        private double dragY;
+
+        protected MouseDragged() { super(); }
 
         public MouseDragged(Screen screen, double mouseX, double mouseY, int mouseButton, double dragX, double dragY) {
             super(screen, mouseX, mouseY);
@@ -292,6 +338,9 @@ public abstract class ScreenEvent extends Event {
         public double getDragY() { return dragY; }
 
         public static class Pre extends MouseDragged implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, double mouseX, double mouseY, int mouseButton, double dragX, double dragY) {
                 super(screen, mouseX, mouseY, mouseButton, dragX, dragY);
             }
@@ -303,6 +352,9 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends MouseDragged {
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
+
             public Post(Screen screen, double mouseX, double mouseY, int mouseButton, double dragX, double dragY) {
                 super(screen, mouseX, mouseY, mouseButton, dragX, dragY);
             }
@@ -316,8 +368,10 @@ public abstract class ScreenEvent extends Event {
 
     // ── MouseScrolled ─────────────────────────────────────
     public static abstract class MouseScrolled extends MouseInput {
-        private final double scrollDeltaX;
-        private final double scrollDeltaY;
+        private double scrollDeltaX;
+        private double scrollDeltaY;
+
+        protected MouseScrolled() { super(); }
 
         public MouseScrolled(Screen screen, double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
             super(screen, mouseX, mouseY);
@@ -329,6 +383,9 @@ public abstract class ScreenEvent extends Event {
         public double getScrollDeltaY() { return scrollDeltaY; }
 
         public static class Pre extends MouseScrolled implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
                 super(screen, mouseX, mouseY, scrollDeltaX, scrollDeltaY);
             }
@@ -340,6 +397,9 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends MouseScrolled {
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
+
             public Post(Screen screen, double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
                 super(screen, mouseX, mouseY, scrollDeltaX, scrollDeltaY);
             }
@@ -353,9 +413,11 @@ public abstract class ScreenEvent extends Event {
 
     // ── KeyInput (private base) ───────────────────────────
     private static abstract class KeyInput extends ScreenEvent {
-        private final int keyCode;
-        private final int scanCode;
-        private final int modifiers;
+        private int keyCode;
+        private int scanCode;
+        private int modifiers;
+
+        protected KeyInput() { super(); }
 
         protected KeyInput(Screen screen, int keyCode, int scanCode, int modifiers) {
             super(screen);
@@ -371,11 +433,16 @@ public abstract class ScreenEvent extends Event {
 
     // ── KeyPressed ────────────────────────────────────────
     public static abstract class KeyPressed extends KeyInput {
+        protected KeyPressed() { super(); }
+
         public KeyPressed(Screen screen, int keyCode, int scanCode, int modifiers) {
             super(screen, keyCode, scanCode, modifiers);
         }
 
         public static class Pre extends KeyPressed implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, int keyCode, int scanCode, int modifiers) {
                 super(screen, keyCode, scanCode, modifiers);
             }
@@ -386,6 +453,9 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends KeyPressed implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
+
             public Post(Screen screen, int keyCode, int scanCode, int modifiers) {
                 super(screen, keyCode, scanCode, modifiers);
             }
@@ -398,11 +468,16 @@ public abstract class ScreenEvent extends Event {
 
     // ── KeyReleased ───────────────────────────────────────
     public static abstract class KeyReleased extends KeyInput {
+        protected KeyReleased() { super(); }
+
         public KeyReleased(Screen screen, int keyCode, int scanCode, int modifiers) {
             super(screen, keyCode, scanCode, modifiers);
         }
 
         public static class Pre extends KeyReleased implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, int keyCode, int scanCode, int modifiers) {
                 super(screen, keyCode, scanCode, modifiers);
             }
@@ -413,6 +488,9 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends KeyReleased implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
+
             public Post(Screen screen, int keyCode, int scanCode, int modifiers) {
                 super(screen, keyCode, scanCode, modifiers);
             }
@@ -425,8 +503,10 @@ public abstract class ScreenEvent extends Event {
 
     // ── CharacterTyped ────────────────────────────────────
     public static abstract class CharacterTyped extends ScreenEvent {
-        private final char codePoint;
-        private final int modifiers;
+        private char codePoint;
+        private int modifiers;
+
+        protected CharacterTyped() { super(); }
 
         public CharacterTyped(Screen screen, char codePoint, int modifiers) {
             super(screen);
@@ -438,6 +518,9 @@ public abstract class ScreenEvent extends Event {
         public int getModifiers() { return modifiers; }
 
         public static class Pre extends CharacterTyped implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(Screen screen, char codePoint, int modifiers) {
                 super(screen, codePoint, modifiers);
             }
@@ -448,6 +531,9 @@ public abstract class ScreenEvent extends Event {
         }
 
         public static class Post extends CharacterTyped {
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
+
             public Post(Screen screen, char codePoint, int modifiers) {
                 super(screen, codePoint, modifiers);
             }
@@ -461,8 +547,11 @@ public abstract class ScreenEvent extends Event {
     // ── Opening ───────────────────────────────────────────
     public static class Opening extends ScreenEvent implements ICancellableEvent {
         @Nullable
-        private final Screen currentScreen;
+        private Screen currentScreen;
         private Screen newScreen;
+
+        /** Required by Forge's EventListenerHelper */
+        public Opening() { super(); }
 
         public Opening(@Nullable Screen currentScreen, Screen screen) {
             super(screen);
@@ -485,6 +574,9 @@ public abstract class ScreenEvent extends Event {
 
     // ── Closing ───────────────────────────────────────────
     public static class Closing extends ScreenEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Closing() { super(); }
+
         public Closing(Screen screen) {
             super(screen);
         }

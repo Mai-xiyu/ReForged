@@ -9,8 +9,8 @@ import net.neoforged.neoforge.event.entity.EntityEvent;
  */
 public class LivingEvent extends EntityEvent {
 
-    /** No-arg constructor for subclasses that don't have an entity yet. */
-    protected LivingEvent() {
+    /** Required by Forge's EventListenerHelper */
+    public LivingEvent() {
         super((net.minecraft.world.entity.Entity) null);
     }
 
@@ -30,6 +30,9 @@ public class LivingEvent extends EntityEvent {
     }
 
     public static class LivingJumpEvent extends LivingEvent {
+        /** Required by Forge's EventListenerHelper */
+        public LivingJumpEvent() { super(); }
+
         public LivingJumpEvent(LivingEntity entity) { super(entity); }
 
         /** Wrapper constructor */
@@ -40,7 +43,10 @@ public class LivingEvent extends EntityEvent {
 
     public static class LivingVisibilityEvent extends LivingEvent {
         private double visibilityModifier;
-        private final Entity lookingEntity;
+        private Entity lookingEntity;
+
+        /** Required by Forge's EventListenerHelper */
+        public LivingVisibilityEvent() { super(); }
 
         public LivingVisibilityEvent(LivingEntity entity, Entity lookingEntity, double originalMultiplier) {
             super(entity);

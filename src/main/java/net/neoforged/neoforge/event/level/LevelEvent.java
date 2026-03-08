@@ -7,7 +7,10 @@ import net.neoforged.bus.api.Event;
  * NeoForge LevelEvent with level field and Forge wrapper constructors.
  */
 public class LevelEvent extends Event {
-    private final LevelAccessor level;
+    private LevelAccessor level;
+
+    /** Required by Forge's EventListenerHelper */
+    public LevelEvent() {}
 
     public LevelEvent(LevelAccessor level) {
         this.level = level;
@@ -21,6 +24,9 @@ public class LevelEvent extends Event {
     public LevelAccessor getLevel() { return level; }
 
     public static class Load extends LevelEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Load() { super(); }
+
         public Load(LevelAccessor level) { super(level); }
 
         /** Wrapper constructor */
@@ -30,6 +36,9 @@ public class LevelEvent extends Event {
     }
 
     public static class Unload extends LevelEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Unload() { super(); }
+
         public Unload(LevelAccessor level) { super(level); }
 
         /** Wrapper constructor */
@@ -39,6 +48,9 @@ public class LevelEvent extends Event {
     }
 
     public static class PotentialSpawns extends LevelEvent {
+        /** Required by Forge's EventListenerHelper */
+        public PotentialSpawns() { super(); }
+
         public PotentialSpawns(LevelAccessor level) { super(level); }
 
         /** Wrapper constructor */

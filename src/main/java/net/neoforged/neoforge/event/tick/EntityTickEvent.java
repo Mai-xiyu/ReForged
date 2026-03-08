@@ -8,15 +8,21 @@ import net.neoforged.bus.api.Event;
  * NeoForge fires for all entities; Forge only for LivingEntity.
  */
 public class EntityTickEvent extends Event {
-    private final Entity entity;
+    private Entity entity;
 
-    protected EntityTickEvent(Entity entity) {
+    /** Required by Forge's EventListenerHelper */
+    public EntityTickEvent() {}
+
+    public EntityTickEvent(Entity entity) {
         this.entity = entity;
     }
 
     public Entity getEntity() { return entity; }
 
     public static class Pre extends EntityTickEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Pre() { super(); }
+
         public Pre(Entity entity) { super(entity); }
 
         /** Wrapper constructor */
@@ -26,6 +32,9 @@ public class EntityTickEvent extends Event {
     }
 
     public static class Post extends EntityTickEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Post() { super(); }
+
         public Post(Entity entity) { super(entity); }
     }
 }

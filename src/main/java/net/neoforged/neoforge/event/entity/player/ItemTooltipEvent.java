@@ -12,9 +12,12 @@ import org.jetbrains.annotations.Nullable;
  * NeoForge ItemTooltipEvent — fired when an item's tooltip is gathered.
  */
 public class ItemTooltipEvent extends PlayerEvent {
-    private final TooltipFlag flags;
-    @NotNull private final ItemStack itemStack;
-    private final List<Component> toolTip;
+    private TooltipFlag flags;
+    @NotNull private ItemStack itemStack;
+    private List<Component> toolTip;
+
+    /** Required by Forge's EventListenerHelper */
+    public ItemTooltipEvent() { super(); }
 
     public ItemTooltipEvent(@NotNull ItemStack itemStack, @Nullable Player player,
                             List<Component> list, TooltipFlag flags) {

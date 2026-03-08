@@ -10,8 +10,8 @@ import net.neoforged.neoforge.event.entity.living.LivingEvent;
  */
 public class PlayerEvent extends LivingEvent {
 
-    /** No-arg constructor for subclasses that don't have a player yet. */
-    protected PlayerEvent() {
+    /** Required by Forge's EventListenerHelper */
+    public PlayerEvent() {
         super((net.minecraft.world.entity.LivingEntity) null);
     }
 
@@ -30,7 +30,10 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class StartTracking extends PlayerEvent {
-        private final Entity target;
+        private Entity target;
+
+        /** Required by Forge's EventListenerHelper */
+        public StartTracking() { super(); }
 
         public StartTracking(Player player, Entity target) {
             super(player);
@@ -47,7 +50,10 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class StopTracking extends PlayerEvent {
-        private final Entity target;
+        private Entity target;
+
+        /** Required by Forge's EventListenerHelper */
+        public StopTracking() { super(); }
 
         public StopTracking(Player player, Entity target) {
             super(player);
@@ -64,8 +70,11 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class Clone extends PlayerEvent {
-        private final Player original;
-        private final boolean wasDeath;
+        private Player original;
+        private boolean wasDeath;
+
+        /** Required by Forge's EventListenerHelper */
+        public Clone() { super(); }
 
         public Clone(Player player, Player original, boolean wasDeath) {
             super(player);
@@ -85,6 +94,9 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class PlayerLoggedInEvent extends PlayerEvent {
+        /** Required by Forge's EventListenerHelper */
+        public PlayerLoggedInEvent() { super(); }
+
         public PlayerLoggedInEvent(Player player) { super(player); }
 
         /** Wrapper constructor */
@@ -94,6 +106,9 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class PlayerLoggedOutEvent extends PlayerEvent {
+        /** Required by Forge's EventListenerHelper */
+        public PlayerLoggedOutEvent() { super(); }
+
         public PlayerLoggedOutEvent(Player player) { super(player); }
 
         /** Wrapper constructor */
@@ -103,7 +118,10 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class PlayerRespawnEvent extends PlayerEvent {
-        private final boolean endConquered;
+        private boolean endConquered;
+
+        /** Required by Forge's EventListenerHelper */
+        public PlayerRespawnEvent() { super(); }
 
         public PlayerRespawnEvent(Player player, boolean endConquered) {
             super(player);
@@ -120,8 +138,11 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class PlayerChangedDimensionEvent extends PlayerEvent {
-        private final net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> from;
-        private final net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> to;
+        private net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> from;
+        private net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> to;
+
+        /** Required by Forge's EventListenerHelper */
+        public PlayerChangedDimensionEvent() { super(); }
 
         public PlayerChangedDimensionEvent(Player player,
                 net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> from,
@@ -143,8 +164,11 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class ItemCraftedEvent extends PlayerEvent {
-        private final net.minecraft.world.item.ItemStack crafting;
-        private final net.minecraft.world.Container craftMatrix;
+        private net.minecraft.world.item.ItemStack crafting;
+        private net.minecraft.world.Container craftMatrix;
+
+        /** Required by Forge's EventListenerHelper */
+        public ItemCraftedEvent() { super(); }
 
         public ItemCraftedEvent(Player player, net.minecraft.world.item.ItemStack crafting,
                                 net.minecraft.world.Container craftMatrix) {
@@ -165,7 +189,10 @@ public class PlayerEvent extends LivingEvent {
     }
 
     public static class ItemSmeltedEvent extends PlayerEvent {
-        private final net.minecraft.world.item.ItemStack smelting;
+        private net.minecraft.world.item.ItemStack smelting;
+
+        /** Required by Forge's EventListenerHelper */
+        public ItemSmeltedEvent() { super(); }
 
         public ItemSmeltedEvent(Player player, net.minecraft.world.item.ItemStack smelting) {
             super(player);

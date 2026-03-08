@@ -12,9 +12,12 @@ import net.neoforged.bus.api.ICancellableEvent;
  * NeoForge BlockEvent with fields and Forge wrapper constructors.
  */
 public class BlockEvent extends Event {
-    private final LevelAccessor level;
-    private final BlockPos pos;
-    private final BlockState state;
+    private LevelAccessor level;
+    private BlockPos pos;
+    private BlockState state;
+
+    /** Required by Forge's EventListenerHelper */
+    public BlockEvent() {}
 
     public BlockEvent(LevelAccessor level, BlockPos pos, BlockState state) {
         this.level = level;
@@ -34,8 +37,11 @@ public class BlockEvent extends Event {
     public BlockState getState() { return state; }
 
     public static class BreakEvent extends BlockEvent implements ICancellableEvent {
-        private final Player player;
+        private Player player;
         private int exp;
+
+        /** Required by Forge's EventListenerHelper */
+        public BreakEvent() { super(); }
 
         public BreakEvent(LevelAccessor level, BlockPos pos, BlockState state, Player player) {
             super(level, pos, state);
@@ -56,9 +62,12 @@ public class BlockEvent extends Event {
     }
 
     public static class EntityPlaceEvent extends BlockEvent implements ICancellableEvent {
-        private final Entity entity;
-        private final BlockState placedBlock;
-        private final BlockState placedAgainst;
+        private Entity entity;
+        private BlockState placedBlock;
+        private BlockState placedAgainst;
+
+        /** Required by Forge's EventListenerHelper */
+        public EntityPlaceEvent() { super(); }
 
         public EntityPlaceEvent(LevelAccessor level, BlockPos pos, BlockState state,
                                 Entity entity, BlockState placedBlock, BlockState placedAgainst) {
@@ -82,6 +91,9 @@ public class BlockEvent extends Event {
     }
 
     public static class EntityMultiPlaceEvent extends EntityPlaceEvent {
+        /** Required by Forge's EventListenerHelper */
+        public EntityMultiPlaceEvent() { super(); }
+
         public EntityMultiPlaceEvent(LevelAccessor level, BlockPos pos, BlockState state,
                                      Entity entity, BlockState placedBlock, BlockState placedAgainst) {
             super(level, pos, state, entity, placedBlock, placedAgainst);

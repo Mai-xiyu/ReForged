@@ -7,10 +7,13 @@ import java.util.function.BooleanSupplier;
  * NeoForge ServerTickEvent with Forge wrapper constructors.
  */
 public class ServerTickEvent extends net.neoforged.bus.api.Event {
-    private final MinecraftServer server;
-    private final BooleanSupplier haveTime;
+    private MinecraftServer server;
+    private BooleanSupplier haveTime;
 
-    protected ServerTickEvent(MinecraftServer server, BooleanSupplier haveTime) {
+    /** Required by Forge's EventListenerHelper */
+    public ServerTickEvent() {}
+
+    public ServerTickEvent(MinecraftServer server, BooleanSupplier haveTime) {
         this.server = server;
         this.haveTime = haveTime;
     }
@@ -19,6 +22,9 @@ public class ServerTickEvent extends net.neoforged.bus.api.Event {
     public boolean haveTime() { return haveTime != null && haveTime.getAsBoolean(); }
 
     public static class Pre extends ServerTickEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Pre() { super(); }
+
         public Pre(MinecraftServer server, BooleanSupplier haveTime) { super(server, haveTime); }
 
         /** Wrapper constructor */
@@ -28,6 +34,9 @@ public class ServerTickEvent extends net.neoforged.bus.api.Event {
     }
 
     public static class Post extends ServerTickEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Post() { super(); }
+
         public Post(MinecraftServer server, BooleanSupplier haveTime) { super(server, haveTime); }
 
         /** Wrapper constructor */

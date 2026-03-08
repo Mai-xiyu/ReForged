@@ -8,7 +8,9 @@ import net.neoforged.bus.api.Event;
  * NeoForge ContainerScreenEvent hierarchy with Forge wrapper constructors.
  */
 public abstract class ContainerScreenEvent extends Event {
-    private final AbstractContainerScreen<?> containerScreen;
+    private AbstractContainerScreen<?> containerScreen;
+
+    protected ContainerScreenEvent() {}
 
     protected ContainerScreenEvent(AbstractContainerScreen<?> containerScreen) {
         this.containerScreen = containerScreen;
@@ -17,9 +19,11 @@ public abstract class ContainerScreenEvent extends Event {
     public AbstractContainerScreen<?> getContainerScreen() { return containerScreen; }
 
     public static abstract class Render extends ContainerScreenEvent {
-        private final GuiGraphics guiGraphics;
-        private final int mouseX;
-        private final int mouseY;
+        private GuiGraphics guiGraphics;
+        private int mouseX;
+        private int mouseY;
+
+        protected Render() { super(); }
 
         protected Render(AbstractContainerScreen<?> guiContainer, GuiGraphics guiGraphics, int mouseX, int mouseY) {
             super(guiContainer);
@@ -33,6 +37,9 @@ public abstract class ContainerScreenEvent extends Event {
         public int getMouseY() { return mouseY; }
 
         public static class Foreground extends Render {
+            /** Required by Forge's EventListenerHelper */
+            public Foreground() { super(); }
+
             public Foreground(AbstractContainerScreen<?> c, GuiGraphics g, int mx, int my) {
                 super(c, g, mx, my);
             }
@@ -43,6 +50,9 @@ public abstract class ContainerScreenEvent extends Event {
         }
 
         public static class Background extends Render {
+            /** Required by Forge's EventListenerHelper */
+            public Background() { super(); }
+
             public Background(AbstractContainerScreen<?> c, GuiGraphics g, int mx, int my) {
                 super(c, g, mx, my);
             }

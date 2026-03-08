@@ -7,10 +7,13 @@ import java.util.function.BooleanSupplier;
  * NeoForge LevelTickEvent with Forge wrapper constructors.
  */
 public class LevelTickEvent extends net.neoforged.bus.api.Event {
-    private final Level level;
-    private final BooleanSupplier haveTime;
+    private Level level;
+    private BooleanSupplier haveTime;
 
-    protected LevelTickEvent(Level level, BooleanSupplier haveTime) {
+    /** Required by Forge's EventListenerHelper */
+    public LevelTickEvent() {}
+
+    public LevelTickEvent(Level level, BooleanSupplier haveTime) {
         this.level = level;
         this.haveTime = haveTime;
     }
@@ -19,6 +22,9 @@ public class LevelTickEvent extends net.neoforged.bus.api.Event {
     public boolean haveTime() { return haveTime != null && haveTime.getAsBoolean(); }
 
     public static class Pre extends LevelTickEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Pre() { super(); }
+
         public Pre(Level level, BooleanSupplier haveTime) { super(level, haveTime); }
 
         /** Wrapper constructor */
@@ -28,6 +34,9 @@ public class LevelTickEvent extends net.neoforged.bus.api.Event {
     }
 
     public static class Post extends LevelTickEvent {
+        /** Required by Forge's EventListenerHelper */
+        public Post() { super(); }
+
         public Post(Level level, BooleanSupplier haveTime) { super(level, haveTime); }
 
         /** Wrapper constructor */

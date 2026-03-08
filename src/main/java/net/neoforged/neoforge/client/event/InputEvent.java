@@ -12,10 +12,13 @@ public abstract class InputEvent extends Event {
 
     // ── Key ───────────────────────────────────────────────
     public static class Key extends InputEvent {
-        private final int key;
-        private final int scanCode;
-        private final int action;
-        private final int modifiers;
+        private int key;
+        private int scanCode;
+        private int action;
+        private int modifiers;
+
+        /** Required by Forge's EventListenerHelper */
+        public Key() {}
 
         public Key(int key, int scanCode, int action, int modifiers) {
             this.key = key;
@@ -40,9 +43,11 @@ public abstract class InputEvent extends Event {
 
     // ── MouseButton ───────────────────────────────────────
     public static abstract class MouseButton extends InputEvent {
-        private final int button;
-        private final int action;
-        private final int modifiers;
+        private int button;
+        private int action;
+        private int modifiers;
+
+        protected MouseButton() {}
 
         protected MouseButton(int button, int action, int modifiers) {
             this.button = button;
@@ -55,6 +60,9 @@ public abstract class InputEvent extends Event {
         public int getModifiers() { return modifiers; }
 
         public static class Pre extends MouseButton implements ICancellableEvent {
+            /** Required by Forge's EventListenerHelper */
+            public Pre() { super(); }
+
             public Pre(int button, int action, int modifiers) {
                 super(button, action, modifiers);
             }
@@ -65,6 +73,9 @@ public abstract class InputEvent extends Event {
         }
 
         public static class Post extends MouseButton {
+            /** Required by Forge's EventListenerHelper */
+            public Post() { super(); }
+
             public Post(int button, int action, int modifiers) {
                 super(button, action, modifiers);
             }
@@ -77,13 +88,16 @@ public abstract class InputEvent extends Event {
 
     // ── MouseScrollingEvent ───────────────────────────────
     public static class MouseScrollingEvent extends InputEvent implements ICancellableEvent {
-        private final double deltaX;
-        private final double deltaY;
-        private final double mouseX;
-        private final double mouseY;
-        private final boolean leftDown;
-        private final boolean middleDown;
-        private final boolean rightDown;
+        private double deltaX;
+        private double deltaY;
+        private double mouseX;
+        private double mouseY;
+        private boolean leftDown;
+        private boolean middleDown;
+        private boolean rightDown;
+
+        /** Required by Forge's EventListenerHelper */
+        public MouseScrollingEvent() {}
 
         public MouseScrollingEvent(double deltaX, double deltaY,
                                     boolean leftDown, boolean middleDown, boolean rightDown,
@@ -119,10 +133,13 @@ public abstract class InputEvent extends Event {
 
     // ── InteractionKeyMappingTriggered ────────────────────
     public static class InteractionKeyMappingTriggered extends InputEvent implements ICancellableEvent {
-        private final int button;
-        private final KeyMapping keyMapping;
-        private final InteractionHand hand;
+        private int button;
+        private KeyMapping keyMapping;
+        private InteractionHand hand;
         private boolean handSwing;
+
+        /** Required by Forge's EventListenerHelper */
+        public InteractionKeyMappingTriggered() {}
 
         public InteractionKeyMappingTriggered(int button, KeyMapping keyMapping, InteractionHand hand) {
             this.button = button;
