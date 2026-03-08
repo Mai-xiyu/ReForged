@@ -17,7 +17,6 @@
         "IngredientMixin",
         "CreativeModeTabsMixin",
         "BalmEntityMixin",
-        "EntityAttachmentMixin",
         "EntityAttachmentHolderMixin",
         "LevelChunkAttachmentMixin",
         "LevelAttachmentMixin",
