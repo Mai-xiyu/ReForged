@@ -140,7 +140,12 @@ public final class ModListInjector {
                 // Register in NeoForge ModList for getModFileById() fallback
                 IModFileInfo forgeFileInfo = container.getModInfo().getOwningFile();
                 if (forgeFileInfo != null) {
-                    if (!existingModFiles.contains(forgeFileInfo)) {
+                    // Only add to modFiles if it's a real Forge ModFileInfo.
+                    // NeoModFileInfo can't be cast to ModFileInfo in crash report code
+                    // (ModList.fileToLine casts IModFileInfo to concrete ModFileInfo).
+                    if (!existingModFiles.contains(forgeFileInfo)
+                            && forgeFileInfo.getClass().getName().contains("ModFileInfo")
+                            && !(forgeFileInfo instanceof NeoModFileInfo)) {
                         existingModFiles.add(forgeFileInfo);
                         modFilesMutated = true;
                     }
