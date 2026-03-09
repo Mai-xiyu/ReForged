@@ -5,10 +5,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.neoforge.capabilities.ItemCapability;
+import net.neoforged.neoforge.common.extensions.IItemStackExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
@@ -31,52 +32,51 @@ import java.util.function.UnaryOperator;
  * via a cast to {@code ItemStack} rather than using {@code @Shadow}.</p>
  */
 @Mixin(ItemStack.class)
-public abstract class ItemStackMixin {
-
-    // ── Shadow only methods declared directly in ItemStack ─────────────────
-
-    @Shadow @Nullable
-    public abstract <T> T set(DataComponentType<? super T> type, @Nullable T value);
-
-    @Shadow @Nullable
-    public abstract <T> T remove(DataComponentType<? extends T> type);
-
-    @Shadow
-    public abstract <T> T update(DataComponentType<T> type, T defaultValue, UnaryOperator<T> updater);
+public abstract class ItemStackMixin implements IItemStackExtension {
 
     // ── Helper: self-cast to ItemStack ─────────────────────────────────────
 
-    private ItemStack self() {
+    private ItemStack stackSelf() {
         return (ItemStack) (Object) this;
     }
 
     // ── NeoForge Supplier<DataComponentType> overloads ─────────────────────
 
     public boolean has(Supplier<? extends DataComponentType<?>> type) {
-        return self().has(type.get());
+        return stackSelf().has(type.get());
     }
 
     @Nullable
     public <T> T get(Supplier<? extends DataComponentType<? extends T>> type) {
-        return self().get(type.get());
+        return stackSelf().get(type.get());
     }
 
     public <T> T getOrDefault(Supplier<? extends DataComponentType<? extends T>> type, T defaultValue) {
-        return self().getOrDefault(type.get(), defaultValue);
+        return stackSelf().getOrDefault(type.get(), defaultValue);
     }
 
     @Nullable
     public <T> T set(Supplier<? extends DataComponentType<? super T>> type, @Nullable T value) {
-        return this.set(type.get(), value);
+		return stackSelf().set(type.get(), value);
     }
 
     @Nullable
     public <T> T remove(Supplier<? extends DataComponentType<? extends T>> type) {
-        return this.remove(type.get());
+		return stackSelf().remove(type.get());
     }
 
     public <T> T update(Supplier<? extends DataComponentType<T>> type, T defaultValue, UnaryOperator<T> updater) {
-        return this.update(type.get(), defaultValue, updater);
+		return stackSelf().update(type.get(), defaultValue, updater);
+    }
+
+    @Nullable
+    public <T, C> T getCapability(ItemCapability<T, C> capability, @Nullable C context) {
+        return capability.getCapability(stackSelf(), context);
+    }
+
+    @Nullable
+    public <T> T getCapability(ItemCapability<T, Void> capability) {
+        return capability.getCapability(stackSelf(), null);
     }
 
     // ── Safe tooltip rendering ─────────────────────────────────────────────

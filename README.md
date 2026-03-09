@@ -143,6 +143,28 @@ ReForged aims to provide broad compatibility with NeoForge mods, but some limita
 - ⚠️ Some advanced NeoForge-exclusive features may not be available
 - ⚠️ Mods with deep NeoForge integration may require additional patches
 
+## 📊 Current Progress Snapshot
+
+Latest implementation snapshot, approximate as of 2026-03-09.
+
+| Subsystem | Weight | Completion | Weighted Score |
+|-----------|--------|------------|----------------|
+| Mod loading pipeline | 20% | 75% | 15.0 |
+| Event system | 20% | 72% | 14.4 |
+| Registry system | 15% | 80% | 12.0 |
+| Capability system | 10% | 85% | 8.5 |
+| Network / Payload | 8% | 70% | 5.6 |
+| Extension / Common API | 12% | 70% | 8.4 |
+| Client side | 10% | 60% | 6.0 |
+| Mixin coverage | 5% | 52% | 2.6 |
+| **Total** | **100%** |  | **72.5%** |
+
+### Notes
+
+- The percentages above are engineering estimates, not formal test pass rates.
+- Recent work mainly improved `Block` / `BlockState` / `Item` / `ItemStack` / `Entity` extension bridges and expanded `EventHooks` coverage.
+- The biggest remaining gaps are still `CommonHooks`, client rendering hooks, advanced entity sync, and deeper NeoForge-only vanilla patch behavior.
+
 ## 📝 Project Structure
 
 ```

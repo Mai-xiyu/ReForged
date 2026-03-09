@@ -6,6 +6,9 @@
     "refmap": "reforged.refmap.json",
     "mixins": [
         "ModFileInfoMixin",
+        "BlockInjectedInterfaceMixin",
+        "BlockStateInjectedInterfaceMixin",
+        "ItemInjectedInterfaceMixin",
         "ItemStackMixin",
         "ItemPropertiesMixin",
         "FoodPropertiesBuilderMixin",
@@ -18,9 +21,18 @@
         "IngredientMixin",
         "CreativeModeTabsMixin",
         "BalmEntityMixin",
+        "EntityInjectedInterfaceMixin",
+        "LivingEntityInjectedInterfaceMixin",
+        "BlockEntityAttachmentMixin",
+        "BlockEntityPersistentDataMixin",
+        "BlockEntityCapabilityMixin",
+        "EntityCapabilityMixin",
         "EntityAttachmentHolderMixin",
+        "LevelChunkNeoAttachmentMixin",
         "LevelChunkAttachmentMixin",
         "LevelAttachmentMixin",
+        "LevelNeoAttachmentMixin",
+        "ServerLevelCapabilityMixin",
         "ServerCommonPacketListenerImplMixin"
     ],
     "client": [
@@ -30,6 +42,7 @@
         "EntityRenderDispatcherMixin",
         "GuiRenderMixin",
         "FontJadePatchMixin",
+        "ClientPacketListenerMixin",
         "ScreenRenderSafetyMixin"
     ],
     "server": [],

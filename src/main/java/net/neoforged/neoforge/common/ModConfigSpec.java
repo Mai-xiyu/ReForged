@@ -1,11 +1,14 @@
 package net.neoforged.neoforge.common;
 
 import com.electronwill.nightconfig.core.EnumGetMethod;
+import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.neoforged.fml.config.IConfigSpec;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -18,10 +21,16 @@ import java.util.function.Supplier;
  */
 public final class ModConfigSpec implements IConfigSpec {
 
+    private static final Map<ForgeConfigSpec, ModConfigSpec> WRAPPERS = new ConcurrentHashMap<>();
+
     private final ForgeConfigSpec forgeSpec;
 
     ModConfigSpec(ForgeConfigSpec forgeSpec) {
         this.forgeSpec = forgeSpec;
+    }
+
+    public static ModConfigSpec wrap(ForgeConfigSpec forgeSpec) {
+        return WRAPPERS.computeIfAbsent(forgeSpec, ModConfigSpec::new);
     }
 
     /** Get the underlying ForgeConfigSpec */
@@ -29,6 +38,31 @@ public final class ModConfigSpec implements IConfigSpec {
 
     @Override
     public boolean isEmpty() { return false; }
+
+    public boolean isLoaded() {
+        return forgeSpec.isLoaded();
+    }
+
+    public UnmodifiableConfig getSpec() {
+        return forgeSpec.getSpec();
+    }
+
+    public UnmodifiableConfig getValues() {
+        return forgeSpec.getValues();
+    }
+
+    public void afterReload() {
+        forgeSpec.afterReload();
+    }
+
+    public void resetCaches(RestartType restartType) {
+        // Forge doesn't track NeoForge restart granularities, so clear all cached values.
+        forgeSpec.afterReload();
+    }
+
+    public void validateSpec(net.neoforged.fml.config.ModConfig config) {
+        // Forge already validated the underlying spec when loading the config.
+    }
 
     // ══════════════════════════════════════════════════════════
     //  Value wrapper types
@@ -91,7 +125,7 @@ public final class ModConfigSpec implements IConfigSpec {
         public Builder worldRestart() { delegate.worldRestart(); return this; }
 
         // ── Build — returns ModConfigSpec ────────────────────
-        public ModConfigSpec build() { return new ModConfigSpec(delegate.build()); }
+        public ModConfigSpec build() { return ModConfigSpec.wrap(delegate.build()); }
 
         // ── configure() — returns Pair<T, ModConfigSpec> ────
         public <T> org.apache.commons.lang3.tuple.Pair<T, ModConfigSpec> configure(
@@ -215,14 +249,12 @@ public final class ModConfigSpec implements IConfigSpec {
             return new EnumValue<>(delegate.defineEnum(path, defaultSupplier, converter, validator, clazz));
         }
 
-        @SuppressWarnings("unchecked")
         public <T> ConfigValue<List<? extends T>> defineList(String path,
                 List<? extends T> defaultValue, Predicate<Object> elementValidator) {
             List<? extends T> safeDefault = defaultValue != null ? defaultValue : List.of();
             return new ConfigValue<>(delegate.defineList(path, safeDefault, elementValidator));
         }
 
-        @SuppressWarnings("unchecked")
         public <T> ConfigValue<List<? extends T>> defineList(String path,
                 Supplier<List<? extends T>> defaultSupplier, Predicate<Object> elementValidator) {
             Supplier<List<? extends T>> safeSupplier = () -> {
@@ -232,7 +264,6 @@ public final class ModConfigSpec implements IConfigSpec {
             return new ConfigValue<>(delegate.defineList(path, safeSupplier, elementValidator));
         }
 
-        @SuppressWarnings("unchecked")
         public <T> ConfigValue<List<? extends T>> defineListAllowEmpty(List<String> path,
                 Supplier<List<? extends T>> defaultSupplier, Predicate<Object> elementValidator) {
             Supplier<List<? extends T>> safeSupplier = () -> {
@@ -242,7 +273,6 @@ public final class ModConfigSpec implements IConfigSpec {
             return new ConfigValue<>(delegate.defineListAllowEmpty(path, safeSupplier, elementValidator));
         }
 
-        @SuppressWarnings("unchecked")
         public <T> ConfigValue<List<? extends T>> defineListAllowEmpty(String path,
                 List<? extends T> defaultValue, Supplier<T> newElementSupplier,
                 Predicate<Object> elementValidator) {
@@ -253,7 +283,6 @@ public final class ModConfigSpec implements IConfigSpec {
                     java.util.Collections.singletonList(path), () -> safeDefault, elementValidator));
         }
 
-        @SuppressWarnings("unchecked")
         public <T> ConfigValue<List<? extends T>> defineListAllowEmpty(String path,
                 Supplier<List<? extends T>> defaultSupplier, Predicate<Object> elementValidator) {
             Supplier<List<? extends T>> safeSupplier = () -> {
@@ -265,11 +294,32 @@ public final class ModConfigSpec implements IConfigSpec {
         }
 
         // NeoForge variant: List<String> path, Supplier defaultSupplier, Supplier<T> newElement (ignored), Predicate
-        @SuppressWarnings("unchecked")
         public <T> ConfigValue<List<? extends T>> defineListAllowEmpty(List<String> path,
                 Supplier<List<? extends T>> defaultSupplier, Supplier<T> newElementSupplier,
                 Predicate<Object> elementValidator) {
             return new ConfigValue<>(delegate.defineListAllowEmpty(path, defaultSupplier, elementValidator));
+        }
+    }
+
+    public enum RestartType {
+        NONE(),
+        WORLD(net.neoforged.fml.config.ModConfig.Type.STARTUP),
+        GAME(net.neoforged.fml.config.ModConfig.Type.STARTUP);
+
+        private final java.util.EnumSet<net.neoforged.fml.config.ModConfig.Type> invalidTypes;
+
+        RestartType(net.neoforged.fml.config.ModConfig.Type... invalidTypes) {
+            this.invalidTypes = invalidTypes.length == 0
+                    ? java.util.EnumSet.noneOf(net.neoforged.fml.config.ModConfig.Type.class)
+                    : java.util.EnumSet.of(invalidTypes[0], java.util.Arrays.copyOfRange(invalidTypes, 1, invalidTypes.length));
+        }
+
+        public boolean isValid(net.neoforged.fml.config.ModConfig.Type type) {
+            return !invalidTypes.contains(type);
+        }
+
+        public RestartType with(RestartType other) {
+            return ordinal() >= other.ordinal() ? this : other;
         }
     }
 }

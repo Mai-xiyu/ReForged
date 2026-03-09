@@ -3,6 +3,8 @@ package net.neoforged.neoforge.event.entity.living;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.bus.api.ICancellableEvent;
+import net.minecraftforge.eventbus.api.Cancelable;
 
 /**
  * Wrapper around Forge's {@link net.minecraftforge.event.entity.living.LivingDamageEvent}.
@@ -17,8 +19,12 @@ public abstract class LivingDamageEvent extends LivingEvent {
     }
 
     public LivingDamageEvent(net.minecraftforge.event.entity.living.LivingDamageEvent delegate) {
-        super(delegate.getEntity());
+        super(delegate);
         this.delegate = delegate;
+    }
+
+    protected net.minecraftforge.event.entity.living.LivingDamageEvent delegate() {
+        return delegate;
     }
 
     @Override
@@ -28,7 +34,8 @@ public abstract class LivingDamageEvent extends LivingEvent {
     public DamageSource getSource() { return delegate.getSource(); }
 
     /** NeoForge Pre fires at same time as Forge's LivingDamageEvent. */
-    public static class Pre extends LivingDamageEvent {
+    @Cancelable
+    public static class Pre extends LivingDamageEvent implements ICancellableEvent {
         private final DamageContainer container;
 
         public Pre(net.minecraftforge.event.entity.living.LivingDamageEvent delegate) {
@@ -42,6 +49,12 @@ public abstract class LivingDamageEvent extends LivingEvent {
         public void setNewDamage(float newDamage) {
             container.setNewDamage(newDamage);
             setAmount(newDamage);
+        }
+
+        @Override
+        public void setCanceled(boolean canceled) {
+            super.setCanceled(canceled);
+            delegate().setCanceled(canceled);
         }
     }
 

@@ -2,13 +2,13 @@ package org.xiyu.reforged.mixin;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.forgespi.locating.IModFile;
+import net.minecraftforge.fml.loading.moddiscovery.ModFileParser;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.io.InputStream;
 import java.nio.file.*;
 
 /**
@@ -25,7 +25,7 @@ import java.nio.file.*;
  *
  * <p>Target class: {@code net.minecraftforge.fml.loading.moddiscovery.ModFileParser}</p>
  */
-@Mixin(targets = "net.minecraftforge.fml.loading.moddiscovery.ModFileParser", remap = false)
+@Mixin(ModFileParser.class)
 public abstract class ModFileInfoMixin {
 
     private static final Logger LOGGER = LogUtils.getLogger();

@@ -1,6 +1,7 @@
 package net.neoforged.neoforge.network.registration;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -49,5 +50,9 @@ public class NetworkRegistry {
 
     public static boolean hasChannel(ResourceLocation channel) {
         return PayloadChannelRegistry.getEntry(channel) != null;
+    }
+
+    public static boolean hasChannel(Connection connection, ConnectionProtocol protocol, ResourceLocation payloadId) {
+        return hasChannel(payloadId);
     }
 }

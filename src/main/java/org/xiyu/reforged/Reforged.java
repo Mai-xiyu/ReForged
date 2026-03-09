@@ -7,7 +7,6 @@ import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PathPackResources;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
@@ -63,6 +62,8 @@ public class Reforged {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+        net.neoforged.neoforge.attachment.AttachmentInternals.init();
+        net.neoforged.neoforge.capabilities.CapabilityHooks.init();
         net.neoforged.neoforge.network.registration.NetworkRegistry.setup();
         LOGGER.info("[ReForged] Common setup phase — NeoForge bridge active");
     }

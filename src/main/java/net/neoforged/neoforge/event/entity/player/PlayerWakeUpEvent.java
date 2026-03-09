@@ -2,15 +2,26 @@ package net.neoforged.neoforge.event.entity.player;
 
 import net.minecraft.world.entity.player.Player;
 
-/** Stub: Fired when a player wakes up. */
 public class PlayerWakeUpEvent extends PlayerEvent {
     private final boolean wakeImmediately;
     private final boolean updateLevel;
 
-    public PlayerWakeUpEvent(Player player, boolean wakeImmediately, boolean updateLevel) {
+    public PlayerWakeUpEvent() {
         super();
+        this.wakeImmediately = false;
+        this.updateLevel = false;
+    }
+
+    public PlayerWakeUpEvent(Player player, boolean wakeImmediately, boolean updateLevel) {
+        super(player);
         this.wakeImmediately = wakeImmediately;
         this.updateLevel = updateLevel;
+    }
+
+    public PlayerWakeUpEvent(net.minecraftforge.event.entity.player.PlayerWakeUpEvent forge) {
+        super(forge);
+        this.wakeImmediately = forge.wakeImmediately();
+        this.updateLevel = forge.updateLevel();
     }
 
     public boolean wakeImmediately() { return wakeImmediately; }

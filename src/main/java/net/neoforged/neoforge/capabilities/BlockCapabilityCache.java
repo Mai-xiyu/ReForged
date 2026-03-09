@@ -4,8 +4,9 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.common.extensions.ILevelExtension;
 import org.jetbrains.annotations.Nullable;
+import org.xiyu.reforged.bridge.ServerLevelCapabilityBridge;
 
 /**
  * A cache for block capabilities, to be used to track capabilities at a specific position.
@@ -34,7 +35,11 @@ public final class BlockCapabilityCache<T, C extends @Nullable Object> {
         Objects.requireNonNull(level);
         Objects.requireNonNull(isValid);
         Objects.requireNonNull(invalidationListener);
-        return new BlockCapabilityCache<>(capability, level, pos.immutable(), context, isValid, invalidationListener);
+        BlockCapabilityCache<T, C> cache = new BlockCapabilityCache<>(capability, level, pos.immutable(), context, isValid, invalidationListener);
+        if ((Object) level instanceof ServerLevelCapabilityBridge bridge) {
+            bridge.reforged$registerCapabilityListener(pos, cache.listener);
+        }
+        return cache;
     }
 
     private final BlockCapability<T, C> capability;
@@ -47,6 +52,8 @@ public final class BlockCapabilityCache<T, C extends @Nullable Object> {
     private boolean cacheValid = false;
     @Nullable
     private T cachedCap = null;
+    private boolean canQuery = true;
+    private final ICapabilityInvalidationListener listener;
 
     private BlockCapabilityCache(BlockCapability<T, C> capability, ServerLevel level,
                                   BlockPos pos, C context,
@@ -57,6 +64,24 @@ public final class BlockCapabilityCache<T, C extends @Nullable Object> {
         this.context = context;
         this.isValid = isValid;
         this.invalidationListener = invalidationListener;
+
+        this.listener = () -> {
+            if (!cacheValid) {
+                return isValid.getAsBoolean();
+            }
+
+            canQuery = false;
+            cacheValid = false;
+            cachedCap = null;
+
+            if (isValid.getAsBoolean()) {
+                invalidationListener.run();
+                canQuery = true;
+                return true;
+            }
+
+            return false;
+        };
     }
 
     public ServerLevel level() { return level; }
@@ -70,12 +95,15 @@ public final class BlockCapabilityCache<T, C extends @Nullable Object> {
      */
     @Nullable
     public T getCapability() {
+        if (!canQuery) {
+            throw new IllegalStateException("Do not call getCapability on an invalid cache or from the invalidation listener!");
+        }
+
         if (!cacheValid) {
             if (!level.isLoaded(pos)) {
                 cachedCap = null;
             } else {
-                BlockEntity be = level.getBlockEntity(pos);
-                cachedCap = capability.getCapability(level, pos, null, be, context);
+                cachedCap = ((ILevelExtension) level).getCapability(capability, pos, context);
             }
             cacheValid = true;
         }

@@ -6,9 +6,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
-
-import java.util.stream.Stream;
 
 /**
  * Makes creative mode tab building error-tolerant.
@@ -23,18 +20,13 @@ public class CreativeModeTabsMixin {
 
     private static final Logger REFORGED_LOGGER = LogManager.getLogger("ReForged");
 
-    @Shadow
-    private static Stream<CreativeModeTab> streamAllTabs() {
-        throw new AssertionError();
-    }
-
     /**
      * @reason Wrap each tab's buildContents in try-catch to prevent one mod's failure from crashing the game
      * @author ReForged
      */
     @Overwrite(remap = false)
     private static void buildAllTabContents(CreativeModeTab.ItemDisplayParameters params) {
-        streamAllTabs()
+		CreativeModeTabs.allTabs().stream()
             .filter(tab -> tab.getType() == CreativeModeTab.Type.CATEGORY)
             .forEach(tab -> {
                 try {
@@ -43,7 +35,7 @@ public class CreativeModeTabsMixin {
                     REFORGED_LOGGER.error("[ReForged] Failed to build creative tab contents: {}", e.getMessage());
                 }
             });
-        streamAllTabs()
+		CreativeModeTabs.allTabs().stream()
             .filter(tab -> tab.getType() == CreativeModeTab.Type.SEARCH)
             .forEach(tab -> {
                 try {

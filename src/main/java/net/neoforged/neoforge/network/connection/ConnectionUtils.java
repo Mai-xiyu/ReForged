@@ -9,6 +9,6 @@ public class ConnectionUtils {
     private ConnectionUtils() {}
 
     public static ConnectionType getConnectionType(Connection connection) {
-        return ConnectionType.OTHER;
+        return connection != null ? ConnectionType.NEOFORGE : ConnectionType.OTHER;
     }
 }

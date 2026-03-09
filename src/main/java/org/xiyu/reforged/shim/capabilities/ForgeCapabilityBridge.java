@@ -31,6 +31,7 @@ public final class ForgeCapabilityBridge {
         // Initialize known capability mappings
         try {
             CAPABILITY_MAP.put(ResourceLocation.parse("neoforge:item_handler"), ForgeCapabilities.ITEM_HANDLER);
+            CAPABILITY_MAP.put(ResourceLocation.parse("neoforge:item_handler_automation"), ForgeCapabilities.ITEM_HANDLER);
             CAPABILITY_MAP.put(ResourceLocation.parse("neoforge:fluid_handler"), ForgeCapabilities.FLUID_HANDLER);
             CAPABILITY_MAP.put(ResourceLocation.parse("neoforge:energy"), ForgeCapabilities.ENERGY);
             CAPABILITY_MAP.put(ResourceLocation.parse("neoforge:fluid_handler_item"), ForgeCapabilities.FLUID_HANDLER_ITEM);
