@@ -2,6 +2,7 @@ package net.neoforged.fml;
 
 import com.mojang.logging.LogUtils;
 import net.neoforged.fml.loading.moddiscovery.ModInfo;
+import net.neoforged.neoforgespi.language.IModInfo;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -54,6 +55,11 @@ public final class ModLoadingIssue {
         List<Object> newMods = new ArrayList<>(this.affectedMods);
         newMods.add(modInfo);
         return new ModLoadingIssue(this.severity, this.translationKey, this.translationArgs, newMods, this.cause);
+    }
+
+    /** Typed overload matching NeoForge's exact method descriptor for IModInfo */
+    public ModLoadingIssue withAffectedMod(IModInfo modInfo) {
+        return withAffectedMod((Object) modInfo);
     }
 
     public ModLoadingIssue withAffectedMods(List<?> modInfos) {
