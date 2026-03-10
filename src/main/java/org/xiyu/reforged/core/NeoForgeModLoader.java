@@ -761,6 +761,7 @@ public final class NeoForgeModLoader {
      * during construction, so configs register under the correct mod ID.
      * Successfully loaded containers are added to {@code collector} for later ModList injection.
      */
+    @SuppressWarnings("removal")
     private static void loadModsFromJar(Path jarPath, URLClassLoader classLoader,
                                          net.neoforged.bus.api.IEventBus busAdapter, IEventBus modBus,
                                          List<ModListInjector.NeoModContainer> collector) throws Exception {
@@ -1059,6 +1060,7 @@ public final class NeoForgeModLoader {
      * Instantiate a NeoForge mod class, trying multiple constructor patterns.
      * Uses both exact type matching and name-based fallback to handle classloader mismatches.
      */
+    @SuppressWarnings("removal")
     private static Object instantiateMod(Class<?> modClass, net.neoforged.bus.api.IEventBus busAdapter,
                                           IEventBus modBus) throws Exception {
         // === Phase 1: Exact type matching (fast path) ===
@@ -1265,6 +1267,7 @@ public final class NeoForgeModLoader {
     /**
      * Create a ModContainer instance compatible with the target classloader.
      */
+    @SuppressWarnings("removal")
     private static Object createModContainerForClassLoader(Class<?> targetModContainerClass, ClassLoader targetLoader) {
         try {
             var forgeContainer = net.minecraftforge.fml.ModLoadingContext.get().getActiveContainer();

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** Proxy: NeoForge's IAttachmentHolder — marks objects that can hold data attachments */
 public interface IAttachmentHolder {
-    boolean hasAttachments();
+    default boolean hasAttachments() { return false; }
 
     boolean hasData(AttachmentType<?> type);
 

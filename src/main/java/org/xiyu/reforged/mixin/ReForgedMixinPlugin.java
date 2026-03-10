@@ -19,6 +19,7 @@ import java.util.Set;
 public class ReForgedMixinPlugin implements IMixinConfigPlugin {
 
     private boolean jadePresent;
+    private boolean balmPresent;
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -28,6 +29,13 @@ public class ReForgedMixinPlugin implements IMixinConfigPlugin {
             jadePresent = true;
         } catch (ClassNotFoundException e) {
             jadePresent = false;
+        }
+        try {
+            Class.forName("net.blay09.mods.balm.api.entity.BalmEntity", false,
+                    getClass().getClassLoader());
+            balmPresent = true;
+        } catch (ClassNotFoundException e) {
+            balmPresent = false;
         }
     }
 
@@ -40,6 +48,10 @@ public class ReForgedMixinPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (mixinClassName.endsWith("FontJadePatchMixin")) {
             return jadePresent;
+        }
+        // Skip our BalmEntityMixin when Balm is present — Balm's own mixin already adds these methods
+        if (mixinClassName.endsWith("BalmEntityMixin")) {
+            return !balmPresent;
         }
         return true;
     }

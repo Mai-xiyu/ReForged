@@ -270,6 +270,7 @@ public class ClientHooks {
 
     // ── Title Screen ──────────────────────────────────────
 
+    @SuppressWarnings("removal")
     public static void renderMainMenu(TitleScreen gui, GuiGraphics guiGraphics, Font font, int width, int height, int alpha) {
         ForgeHooksClient.renderMainMenu(gui, guiGraphics, font, width, height, alpha);
     }

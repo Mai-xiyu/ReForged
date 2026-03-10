@@ -100,4 +100,9 @@ public class PayloadRegistrar {
         delegate.executesOn(thread);
         return this;
     }
+
+    public PayloadRegistrar executesOn(HandlerThread thread) {
+        delegate.executesOn(thread);
+        return this;
+    }
 }

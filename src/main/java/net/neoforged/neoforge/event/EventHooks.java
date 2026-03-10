@@ -299,6 +299,7 @@ public final class EventHooks {
         return ForgeEventFactory.onResourceReload(serverResources, registries, registryAccess);
     }
 
+    @SuppressWarnings("removal")
     public static List<PreparableReloadListener> onResourceReload(ReloadableServerResources serverResources, net.minecraft.core.RegistryAccess registryAccess) {
         return ForgeEventFactory.onResourceReload(serverResources, registryAccess);
     }

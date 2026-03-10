@@ -79,6 +79,7 @@ public class RegisterEvent extends net.neoforged.bus.api.Event implements IModBu
             register(key.location(), value);
         }
 
+        @SuppressWarnings("removal")
         default void register(String name, T value) {
             register(ResourceLocation.fromNamespaceAndPath(
                     net.minecraftforge.fml.ModLoadingContext.get().getActiveNamespace(), name), value);

@@ -18,6 +18,7 @@ public class ModLoadingContext {
      * proxy: getActiveContainer()
      * MUST return net.neoforged.fml.ModContainer (our proxy), NOT Forge's.
      */
+    @SuppressWarnings("removal")
     public ModContainer getActiveContainer() {
         // Delegate to Forge's ModLoadingContext to get the active container, then wrap it
         return ModContainer.wrap(net.minecraftforge.fml.ModLoadingContext.get().getActiveContainer());
@@ -26,6 +27,7 @@ public class ModLoadingContext {
     /**
      * Returns the namespace (mod-id) of the currently active mod container.
      */
+    @SuppressWarnings("removal")
     public String getActiveNamespace() {
         return net.minecraftforge.fml.ModLoadingContext.get().getActiveNamespace();
     }

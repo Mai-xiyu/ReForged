@@ -47,6 +47,7 @@ public class ClientChatReceivedEvent extends net.neoforged.bus.api.Event impleme
 		}
 
 		/** Wrapper constructor for EventBusAdapter bridging. */
+		@SuppressWarnings("removal")
 		public System(net.minecraftforge.client.event.ClientChatReceivedEvent.System forge) {
 			this(forge.getMessage(), forge.isOverlay());
 		}

@@ -18,11 +18,6 @@ public class LevelChunkNeoAttachmentMixin implements IAttachmentHolder, NeoAttac
     private final AttachmentHolder.AsField reforged$neoAttachmentHolder = new AttachmentHolder.AsField(this);
 
     @Override
-    public boolean hasAttachments() {
-        return reforged$neoAttachmentHolder.hasAttachments();
-    }
-
-    @Override
     public boolean hasData(AttachmentType<?> type) {
         return reforged$neoAttachmentHolder.hasData(type);
     }
@@ -40,15 +35,6 @@ public class LevelChunkNeoAttachmentMixin implements IAttachmentHolder, NeoAttac
     @Override
     public <T> T removeData(AttachmentType<T> type) {
         return reforged$neoAttachmentHolder.removeData(type);
-    }
-
-    @Override
-    public <T> Optional<T> getExistingData(AttachmentType<T> type) {
-        return IAttachmentHolder.super.getExistingData(type);
-    }
-
-    public <T> Optional<T> getExistingData(Supplier<AttachmentType<T>> type) {
-        return getExistingData(type.get());
     }
 
     @Override

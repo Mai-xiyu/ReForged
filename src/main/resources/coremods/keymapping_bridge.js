@@ -30,7 +30,8 @@ function initializeCoreMod() {
             },
             'transformer': function(classNode) {
                 addNeoForgeConstructor(classNode);
-                ASMAPI.log('INFO', '[ReForged] Added NeoForge-typed constructor bridge to KeyMapping');
+                addNeoForgeTypeIntConstructor(classNode);
+                ASMAPI.log('INFO', '[ReForged] Added NeoForge-typed constructor bridges to KeyMapping');
                 return classNode;
             }
         }
@@ -107,5 +108,78 @@ function addNeoForgeConstructor(classNode) {
 
     method.maxStack = 6;
     method.maxLocals = 6;
+    classNode.methods.add(method);
+}
+
+/**
+ * Injects a 6-arg constructor that takes InputConstants.Type + int keyCode:
+ *
+ * public KeyMapping(String description, neo.IKeyConflictContext ctx, neo.KeyModifier mod,
+ *                   InputConstants.Type type, int keyCode, String category) {
+ *     this(description, ctx, mod, type.getOrCreate(keyCode), category);
+ * }
+ *
+ * This is the form JEI's ForgeJeiKeyMappingBuilder.buildKeyboardKey() and YSM call.
+ */
+function addNeoForgeTypeIntConstructor(classNode) {
+    var neoDesc6 = '('
+        + 'Ljava/lang/String;'
+        + 'Lnet/neoforged/neoforge/client/settings/IKeyConflictContext;'
+        + 'Lnet/neoforged/neoforge/client/settings/KeyModifier;'
+        + 'Lcom/mojang/blaze3d/platform/InputConstants$Type;'
+        + 'I'
+        + 'Ljava/lang/String;'
+        + ')V';
+
+    // Delegate to the 5-arg NeoForge constructor we already injected above
+    var neoDesc5 = '('
+        + 'Ljava/lang/String;'
+        + 'Lnet/neoforged/neoforge/client/settings/IKeyConflictContext;'
+        + 'Lnet/neoforged/neoforge/client/settings/KeyModifier;'
+        + 'Lcom/mojang/blaze3d/platform/InputConstants$Key;'
+        + 'Ljava/lang/String;'
+        + ')V';
+
+    var method = new MethodNode(
+        Opcodes.ACC_PUBLIC,
+        '<init>',
+        neoDesc6,
+        null, null
+    );
+
+    // this
+    method.instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
+    // description (String)
+    method.instructions.add(new VarInsnNode(Opcodes.ALOAD, 1));
+    // keyConflictContext (neo IKeyConflictContext)
+    method.instructions.add(new VarInsnNode(Opcodes.ALOAD, 2));
+    // keyModifier (neo KeyModifier)
+    method.instructions.add(new VarInsnNode(Opcodes.ALOAD, 3));
+    // Convert InputConstants.Type + int -> InputConstants.Key via type.getOrCreate(keyCode)
+    method.instructions.add(new VarInsnNode(Opcodes.ALOAD, 4));   // type
+    method.instructions.add(new VarInsnNode(Opcodes.ILOAD, 5));   // keyCode (int)
+    method.instructions.add(new MethodInsnNode(
+        Opcodes.INVOKEVIRTUAL,
+        'com/mojang/blaze3d/platform/InputConstants$Type',
+        'getOrCreate',
+        '(I)Lcom/mojang/blaze3d/platform/InputConstants$Key;',
+        false
+    ));
+    // category (String) — slot 6
+    method.instructions.add(new VarInsnNode(Opcodes.ALOAD, 6));
+
+    // Delegate to the NeoForge 5-arg constructor (injected by addNeoForgeConstructor above)
+    method.instructions.add(new MethodInsnNode(
+        Opcodes.INVOKESPECIAL,
+        'net/minecraft/client/KeyMapping',
+        '<init>',
+        neoDesc5,
+        false
+    ));
+
+    method.instructions.add(new InsnNode(Opcodes.RETURN));
+
+    method.maxStack = 7;
+    method.maxLocals = 7;
     classNode.methods.add(method);
 }
