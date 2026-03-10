@@ -6,6 +6,7 @@
     "refmap": "reforged.refmap.json",
     "mixins": [
         "ModFileInfoMixin",
+        "ConnectionMixin",
         "BlockInjectedInterfaceMixin",
         "BlockStateInjectedInterfaceMixin",
         "ItemInjectedInterfaceMixin",
