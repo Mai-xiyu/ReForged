@@ -1,20 +1,24 @@
 package net.neoforged.neoforge.client.event;
 
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.world.level.GameType;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 /**
- * Stub: Fired when a player's game type changes on the client.
+ * Fired when the client player is notified of a change of {@link GameType} from the server.
  */
 public class ClientPlayerChangeGameTypeEvent extends Event {
+    private final PlayerInfo info;
     private final GameType currentGameType;
     private final GameType newGameType;
 
-    public ClientPlayerChangeGameTypeEvent(GameType current, GameType newType) {
-        this.currentGameType = current;
-        this.newGameType = newType;
+    public ClientPlayerChangeGameTypeEvent(PlayerInfo info, GameType currentGameType, GameType newGameType) {
+        this.info = info;
+        this.currentGameType = currentGameType;
+        this.newGameType = newGameType;
     }
 
+    public PlayerInfo getInfo() { return info; }
     public GameType getCurrentGameType() { return currentGameType; }
     public GameType getNewGameType() { return newGameType; }
 }

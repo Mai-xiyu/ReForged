@@ -1,9 +1,14 @@
 package net.neoforged.neoforge.energy;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.Tag;
+import net.minecraftforge.common.util.INBTSerializable;
+
 /**
- * Stub: NeoForge's EnergyStorage — default implementation of IEnergyStorage.
+ * NeoForge's EnergyStorage — default implementation of IEnergyStorage with NBT persistence.
  */
-public class EnergyStorage implements IEnergyStorage {
+public class EnergyStorage implements IEnergyStorage, INBTSerializable<Tag> {
     protected int energy;
     protected int capacity;
     protected int maxReceive;
@@ -55,4 +60,16 @@ public class EnergyStorage implements IEnergyStorage {
 
     @Override
     public boolean canReceive() { return maxReceive > 0; }
+
+    @Override
+    public Tag serializeNBT(HolderLookup.Provider provider) {
+        return IntTag.valueOf(this.energy);
+    }
+
+    @Override
+    public void deserializeNBT(HolderLookup.Provider provider, Tag nbt) {
+        if (nbt instanceof IntTag intTag) {
+            this.energy = Math.max(0, Math.min(capacity, intTag.getAsInt()));
+        }
+    }
 }

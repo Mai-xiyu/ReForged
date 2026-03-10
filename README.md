@@ -28,7 +28,7 @@ ReForged is an innovative runtime adapter that bridges the gap between NeoForge 
 - 🎯 **Event Bus Bridging** — Transparent event system compatibility
 - 📦 **Resource Integration** — NeoForge mod assets (textures, models, recipes) automatically available
 - ⚙️ **Automatic Configuration** — Seamless conversion of `neoforge.mods.toml` to Forge format
-- 🎨 **Comprehensive Patching** — 17+ Mixin patches for edge case compatibility
+- 🎨 **Comprehensive Patching** — 40 Mixin patches for edge case compatibility
 - 🛠️ **API Shims** — Drop-in replacements for DeferredRegister, CreativeTabs, Attachments, and more
 
 ## 🏗️ Technical Architecture
@@ -60,7 +60,7 @@ Register mod resources as Minecraft resource packs
 | **ReForgedRemapper** | Rewrites NeoForge class references to Forge equivalents |
 | **NeoForgeEventBusAdapter** | Dynamic proxy bridging event bus systems |
 | **Shim Layer** | Drop-in API replacements for NeoForge classes |
-| **Mixin System** | 17+ patches for Minecraft/Forge compatibility |
+| **Mixin System** | 40 patches for Minecraft/Forge compatibility |
 
 ## 📦 Installation
 
@@ -145,25 +145,35 @@ ReForged aims to provide broad compatibility with NeoForge mods, but some limita
 
 ## 📊 Current Progress Snapshot
 
-Latest implementation snapshot, approximate as of 2026-03-09.
+Latest implementation snapshot, approximate as of 2026-03-10.
 
 | Subsystem | Weight | Completion | Weighted Score |
 |-----------|--------|------------|----------------|
-| Mod loading pipeline | 20% | 75% | 15.0 |
-| Event system | 20% | 72% | 14.4 |
-| Registry system | 15% | 80% | 12.0 |
-| Capability system | 10% | 85% | 8.5 |
-| Network / Payload | 8% | 70% | 5.6 |
-| Extension / Common API | 12% | 70% | 8.4 |
-| Client side | 10% | 60% | 6.0 |
-| Mixin coverage | 5% | 52% | 2.6 |
-| **Total** | **100%** |  | **72.5%** |
+| Mod loading pipeline | 20% | 78% | 15.6 |
+| Event system | 20% | 80% | 16.0 |
+| Registry system | 15% | 88% | 13.2 |
+| Capability system | 10% | 88% | 8.8 |
+| Network / Payload | 8% | 80% | 6.4 |
+| Extension / Common API | 12% | 85% | 10.2 |
+| Client side | 10% | 75% | 7.5 |
+| Mixin coverage | 5% | 55% | 2.75 |
+| **Total** | **100%** |  | **80.5%** |
+
+### Recent Changes (since 03-09)
+
+- **Registry system**: Implemented full DataMap system (`DataMapStorage`, `IRegistryExtension.getDataMap()`, `IWithData.getData()`); `DeferredHolder.is(TagKey)` / `tags()` now resolve via `BuiltInRegistries`; all 4 HolderSetType codecs (ANY/AND/OR/NOT) fully implemented with proper `makeCodec()` / `makeStreamCodec()`.
+- **Network / Payload**: `ClientPayloadContext.reply()` & `ServerPayloadContext.reply()` now delegate properly to `PayloadChannelRegistry.sendViaConnection()`.
+- **Extension / Common API**: `CommonHooks.getTagFromVanillaTier()` maps all 6 vanilla Tiers to `BlockTags.INCORRECT_FOR_*`; `FarmlandWaterManager` delegates to Forge; `IBlockEntityExtension.getPersistentData()` provides per-instance caching; `IHolderLookupProviderExtension.lookup()` delegates to the provider; `CompositeHolderSet` now implements `ICustomHolderSet` with `homogenize()` support.
+- **Client side**: `CompositeRenderable.render()` and `BakedModelRenderable.render()` fully implemented with transform matrices and `putBulkData()` rendering.
+- **Capability system**: Improved `AttachmentBridge` data delegation paths.
+- **Permission**: `PermissionAPI.getRegisteredNodes()` now backed by a real registry populated via `PermissionGatherEvent`.
 
 ### Notes
 
 - The percentages above are engineering estimates, not formal test pass rates.
-- Recent work mainly improved `Block` / `BlockState` / `Item` / `ItemStack` / `Entity` extension bridges and expanded `EventHooks` coverage.
-- The biggest remaining gaps are still `CommonHooks`, client rendering hooks, advanced entity sync, and deeper NeoForge-only vanilla patch behavior.
+- 765 Java source files total (685 shim + 80 core), 40 Mixin patches.
+- Only 4 `UnsupportedOperationException` remain — all intentional by design (e.g. `PartEntity.getAddEntityPacket()`, `ClientCommandSourceStack.getServer()`).
+- The biggest remaining gaps are deeper client rendering/model bake hooks, advanced entity sync, and NeoForge-only vanilla patch behavior.
 
 ## 📝 Project Structure
 
@@ -188,7 +198,7 @@ ReForged/
 
 ## 🔐 License
 
-All Rights Reserved © 2024 Mai_xiyu
+All Rights Reserved © 2025-2026 Mai_xiyu
 
 ## 🙋 Support
 

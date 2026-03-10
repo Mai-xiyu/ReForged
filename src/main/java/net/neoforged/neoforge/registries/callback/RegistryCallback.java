@@ -1,7 +1,8 @@
 package net.neoforged.neoforge.registries.callback;
 
 /**
- * Stub: Base interface for registry callbacks.
+ * Base interface for registry callbacks.
+ * Implementations include AddCallback, BakeCallback, ClearCallback.
  */
 public interface RegistryCallback<T> {
 }

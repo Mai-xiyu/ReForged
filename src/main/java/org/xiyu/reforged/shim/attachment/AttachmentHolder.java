@@ -101,8 +101,10 @@ public class AttachmentHolder implements IAttachmentHolder {
     }
 
     /**
-     * Serializes all serializable attachments to NBT (stub — not all attachments support serialization).
+     * Serializes all serializable attachments to NBT.
+     * Uses each AttachmentType's Codec to encode values.
      */
+    @SuppressWarnings("unchecked")
     public CompoundTag serializeAttachments(HolderLookup.Provider provider) {
         if (attachments == null || attachments.isEmpty()) {
             return null;
@@ -110,20 +112,47 @@ public class AttachmentHolder implements IAttachmentHolder {
         CompoundTag tag = new CompoundTag();
         for (var entry : attachments.entrySet()) {
             AttachmentType<?> type = entry.getKey();
-            if (type.shouldSerialize() && type.id() != null) {
-                // Stub: actual serialization of attachment data depends on the serializer
-                LOGGER.debug("[ReForged] Skipping serialization for attachment '{}' (serializer not bridged)", type.id());
+            if (type.shouldSerialize() && type.id() != null && type.codec() != null) {
+                try {
+                    com.mojang.serialization.Codec<Object> codec = (com.mojang.serialization.Codec<Object>) type.codec();
+                    var ops = provider.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
+                    var result = codec.encodeStart(ops, entry.getValue());
+                    result.resultOrPartial(err ->
+                            LOGGER.warn("[ReForged] Failed to serialize attachment '{}': {}", type.id(), err)
+                    ).ifPresent(nbt -> tag.put(type.id(), nbt));
+                } catch (Exception e) {
+                    LOGGER.warn("[ReForged] Error serializing attachment '{}': {}", type.id(), e.getMessage());
+                }
             }
         }
         return tag.isEmpty() ? null : tag;
     }
 
     /**
-     * Deserializes attachments from NBT (stub).
+     * Deserializes attachments from NBT.
+     * Requires an attachment type registry to resolve types by ID. Currently limited
+     * to types that have been registered via the DeferredRegister system.
      */
     public void deserializeAttachments(HolderLookup.Provider provider, CompoundTag tag) {
+        if (tag == null || tag.isEmpty()) return;
         LOGGER.debug("[ReForged] deserializeAttachments called with {} keys", tag.getAllKeys().size());
-        // Stub: actual deserialization would need the AttachmentType registry
+        // Look up registered attachment types (they should be registered via NeoForge's DeferredRegister)
+        for (String key : tag.getAllKeys()) {
+            AttachmentType<?> type = AttachmentTypeRegistry.getById(key);
+            if (type != null && type.codec() != null) {
+                try {
+                    var ops = provider.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
+                    var result = type.codec().parse(ops, tag.get(key));
+                    result.resultOrPartial(err ->
+                            LOGGER.warn("[ReForged] Failed to deserialize attachment '{}': {}", key, err)
+                    ).ifPresent(value -> getAttachmentMap().put(type, value));
+                } catch (Exception e) {
+                    LOGGER.warn("[ReForged] Error deserializing attachment '{}': {}", key, e.getMessage());
+                }
+            } else {
+                LOGGER.debug("[ReForged] Skipping deserialization for unknown attachment '{}'", key);
+            }
+        }
     }
 
     /**

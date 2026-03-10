@@ -1,18 +1,21 @@
 package net.neoforged.neoforge.client.event;
 
-import net.minecraft.network.chat.Component;
-import net.minecraftforge.eventbus.api.Event;
+import com.google.common.base.Strings;
+import net.neoforged.bus.api.ICancellableEvent;
 
 /**
  * Stub: Fired when a player sends a chat message from the client.
  */
-public class ClientChatEvent extends Event {
+public class ClientChatEvent extends net.neoforged.bus.api.Event implements ICancellableEvent {
     private String message;
+    private final String originalMessage;
 
     public ClientChatEvent(String message) {
-        this.message = message;
+        this.originalMessage = Strings.nullToEmpty(message);
+        this.message = this.originalMessage;
     }
 
     public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public void setMessage(String message) { this.message = Strings.nullToEmpty(message); }
+    public String getOriginalMessage() { return originalMessage; }
 }

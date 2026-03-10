@@ -1,11 +1,20 @@
 package net.neoforged.neoforge.registries.datamaps;
 
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 /**
- * Stub: Fired when data maps have been updated/reloaded.
+ * Fired when data maps have been updated/reloaded.
  */
 public class DataMapsUpdatedEvent extends Event {
-    public DataMapsUpdatedEvent() {
+    private final boolean fromDatapack;
+
+    public DataMapsUpdatedEvent(boolean fromDatapack) {
+        this.fromDatapack = fromDatapack;
     }
+
+    public DataMapsUpdatedEvent() {
+        this(false);
+    }
+
+    public boolean isFromDatapack() { return fromDatapack; }
 }

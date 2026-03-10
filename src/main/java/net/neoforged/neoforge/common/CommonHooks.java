@@ -2,35 +2,53 @@ package net.neoforged.neoforge.common;
 
 import com.mojang.serialization.Lifecycle;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import java.util.List;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.core.Direction;
-import net.minecraft.network.syncher.EntityDataSerializer;
-import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.CrudeIncrementalIntIdentityHashBiMap;
+import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AnvilMenu;
+import net.minecraft.world.inventory.ClickAction;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.LevelStorageSource;
@@ -39,24 +57,26 @@ import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
-import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
+import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.event.ForgeEventFactory;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
+import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
+import net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent;
 import net.neoforged.neoforge.event.entity.living.ArmorHurtEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 import net.neoforged.neoforge.event.entity.living.LivingUseTotemEvent;
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
-import net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
-import net.neoforged.neoforge.common.damagesource.DamageContainer;
-import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.common.ForgeHooks;
 import net.neoforged.neoforge.fluids.FluidType;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.SlotAccess;
 
 import javax.annotation.Nullable;
 
@@ -290,5 +310,178 @@ public class CommonHooks {
 				state.getBlock().popExperience(level, pos, event.getDroppedExperience());
 			}
 		}
+	}
+
+	// ====== Anvil / Grindstone / Container ======
+
+	public static boolean onAnvilChange(AnvilMenu container, ItemStack left, ItemStack right, Container outputSlot, String name, long baseCost, Player player) {
+		return ForgeHooks.onAnvilChange(container, left, right, outputSlot, name, baseCost, player);
+	}
+
+	public static void onAnvilRepair(Player player, ItemStack output, ItemStack left, ItemStack right) {
+		ForgeEventFactory.onAnvilRepair(player, output, left, right);
+	}
+
+	public static boolean onGrindstoneChange(ItemStack top, ItemStack bottom, Container outputSlot, int xp) {
+		var event = ForgeEventFactory.onGrindstoneChange(top, bottom, outputSlot, xp);
+		return event.isCanceled();
+	}
+
+	public static boolean onGrindstoneTake(Container inputSlots, ContainerLevelAccess access, Function<Level, Integer> xpFunction) {
+		return ForgeHooks.onGrindstoneTake(inputSlots, access, xpFunction);
+	}
+
+	public static void setCraftingPlayer(Player player) {
+		ForgeHooks.setCraftingPlayer(player);
+	}
+
+	@Nullable
+	public static Player getCraftingPlayer() {
+		return ForgeHooks.getCraftingPlayer();
+	}
+
+	public static ItemStack getCraftingRemainingItem(ItemStack stack) {
+		return ForgeHooks.getCraftingRemainingItem(stack);
+	}
+
+	public static boolean onItemStackedOn(ItemStack carriedItem, ItemStack stackedOnItem, Slot slot, ClickAction action, Player player, SlotAccess carriedSlotAccess) {
+		return ForgeEventFactory.onItemStackedOn(carriedItem, stackedOnItem, slot, action, player, carriedSlotAccess);
+	}
+
+	// ====== Living Entity / AI / Damage ======
+
+	public static net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent onLivingChangeTarget(LivingEntity entity, @Nullable LivingEntity target, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.ILivingTargetType targetType) {
+		var forgeEvent = ForgeEventFactory.onLivingChangeTargetMob(entity, target);
+		return new net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent(forgeEvent);
+	}
+
+	public static double getEntityVisibilityMultiplier(LivingEntity entity, Entity lookingEntity, double originalMultiplier) {
+		return ForgeHooks.getEntityVisibilityMultiplier(entity, lookingEntity, originalMultiplier);
+	}
+
+	public static Optional<BlockPos> isLivingOnLadder(BlockState state, Level level, BlockPos pos, LivingEntity entity) {
+		return ForgeHooks.isLivingOnLadder(state, level, pos, entity);
+	}
+
+	public static void onLivingJump(LivingEntity entity) {
+		ForgeHooks.onLivingJump(entity);
+	}
+
+	public static boolean onLivingSwapHandItems(LivingEntity entity) {
+		var event = ForgeEventFactory.onLivingSwapHandItems(entity);
+		return event.isCanceled();
+	}
+
+	public static void onLivingBreathe(LivingEntity entity, boolean canBreathe, int consumeAirAmount, int refillAirAmount, boolean canRefillAir) {
+		ForgeEventFactory.onLivingBreathe(entity, canBreathe, consumeAirAmount, refillAirAmount, canRefillAir);
+	}
+
+	public static boolean shouldSuppressEnderManAnger(EnderMan enderMan, Player player, ItemStack mask) {
+		return ForgeHooks.shouldSuppressEnderManAnger(enderMan, player, mask);
+	}
+
+	public static boolean canMobEffectBeApplied(LivingEntity entity, MobEffectInstance effectInstance) {
+		var event = ForgeEventFactory.onLivingEffectCanApply(entity, effectInstance);
+		return event.getResult() != net.minecraftforge.eventbus.api.Event.Result.DENY;
+	}
+
+	public static void onLivingEquipmentChange(LivingEntity entity, EquipmentSlot slot, ItemStack from, ItemStack to) {
+		ForgeEventFactory.onLivingEquipmentChange(entity, slot, from, to);
+	}
+
+	// ====== Block / Level ======
+
+	public static int fireBlockBreak(Level level, GameType gameType, ServerPlayer player, BlockPos pos, BlockState state) {
+		return ForgeHooks.onBlockBreakEvent(level, gameType, player, pos);
+	}
+
+	public static void onDifficultyChange(net.minecraft.world.Difficulty difficulty, net.minecraft.world.Difficulty oldDifficulty) {
+		ForgeEventFactory.onDifficultyChange(difficulty, oldDifficulty);
+	}
+
+	public static boolean onVanillaGameEvent(Level level, Holder<GameEvent> vanillaEvent, Vec3 pos, GameEvent.Context context) {
+		return ForgeEventFactory.onVanillaGameEvent(level, vanillaEvent, pos, context);
+	}
+
+	public static boolean canCropGrow(Level level, BlockPos pos, BlockState state, boolean def) {
+		return ForgeHooks.onCropsGrowPre(level, pos, state, def);
+	}
+
+	public static void fireCropGrowPost(Level level, BlockPos pos, BlockState state) {
+		ForgeHooks.onCropsGrowPost(level, pos, state);
+	}
+
+	public static void onEntityEnterSection(Entity entity, long packedOldPos, long packedNewPos) {
+		ForgeEventFactory.onEntityEnterSection(entity, packedOldPos, packedNewPos);
+	}
+
+	// ====== Chat / Communication ======
+
+	@Nullable
+	public static Component onServerChatSubmittedEvent(ServerPlayer player, Component message) {
+		return ForgeHooks.onServerChatSubmittedEvent(player, message);
+	}
+
+	public static Component newChatWithLinks(String string) {
+		return ForgeHooks.newChatWithLinks(string);
+	}
+
+	public static Component newChatWithLinks(String string, boolean allowMissingHeader) {
+		return ForgeHooks.newChatWithLinks(string, allowMissingHeader);
+	}
+
+	// ====== Registry / Data / Misc ======
+
+	public static TagKey<net.minecraft.world.level.block.Block> getTagFromVanillaTier(Tiers tier) {
+		return switch (tier) {
+			case WOOD -> net.minecraft.tags.BlockTags.INCORRECT_FOR_WOODEN_TOOL;
+			case STONE -> net.minecraft.tags.BlockTags.INCORRECT_FOR_STONE_TOOL;
+			case IRON -> net.minecraft.tags.BlockTags.INCORRECT_FOR_IRON_TOOL;
+			case DIAMOND -> net.minecraft.tags.BlockTags.INCORRECT_FOR_DIAMOND_TOOL;
+			case GOLD -> net.minecraft.tags.BlockTags.INCORRECT_FOR_GOLD_TOOL;
+			case NETHERITE -> net.minecraft.tags.BlockTags.INCORRECT_FOR_NETHERITE_TOOL;
+			default -> null;
+		};
+	}
+
+	public static List<String> getModDataPacks() {
+		return ForgeHooks.getModPacks();
+	}
+
+	public static List<String> getModDataPacksWithVanilla() {
+		return ForgeHooks.getModPacksWithVanilla();
+	}
+
+	public static Map<EntityType<? extends LivingEntity>, AttributeSupplier> getAttributesView() {
+		return ForgeHooks.getAttributesView();
+	}
+
+	public static void modifyAttributes() {
+		ForgeHooks.modifyAttributes();
+	}
+
+	public static net.minecraft.util.datafix.fixes.StructuresBecomeConfiguredFix.Conversion getStructureConversion(String originalBiome) {
+		return ForgeHooks.getStructureConversion(originalBiome);
+	}
+
+	public static boolean checkStructureNamespace(String biome) {
+		return ForgeHooks.checkStructureNamespace(biome);
+	}
+
+	// ====== NeoForge-only stubs (no Forge equivalent, provide safe fallbacks) ======
+
+	public static void markComponentClassAsValid(Class<?> clazz) {
+		// NeoForge component validation — no Forge equivalent; no-op
+	}
+
+	public static boolean validateComponent(@Nullable Object component) {
+		// NeoForge component validation — no Forge equivalent; always valid
+		return true;
+	}
+
+	@Nullable
+	public static ResourceLocation prefixNamespace(ResourceLocation original) {
+		// NeoForge namespace prefix helper — return as-is for Forge compat
+		return original;
 	}
 }

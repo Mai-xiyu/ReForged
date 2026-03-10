@@ -5,17 +5,53 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderOwner;
 import net.minecraft.core.HolderSet;
 import net.minecraft.tags.TagKey;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * Stub: Base class for composite holder sets.
+ * Base class for composite holder sets (AND, OR, etc.).
  */
-public abstract class CompositeHolderSet<T> extends HolderSet.ListBacked<T> {
+public abstract class CompositeHolderSet<T> extends HolderSet.ListBacked<T> implements ICustomHolderSet<T> {
+    private final List<HolderSet<T>> components;
+    private List<Holder<T>> resolvedContents;
+
+    protected CompositeHolderSet() {
+        this.components = Collections.emptyList();
+    }
+
+    protected CompositeHolderSet(List<HolderSet<T>> components) {
+        this.components = List.copyOf(components);
+    }
+
+    public List<HolderSet<T>> getComponents() {
+        return components;
+    }
+
+    /**
+     * Returns the component list suitable for codec serialization.
+     * <p>In the shim layer we simply return the raw components; NeoForge's full
+     * implementation normalises non-{@link ICustomHolderSet} entries for a
+     * homogeneous serialisation type, but that is unnecessary here.</p>
+     */
+    public List<HolderSet<T>> homogenize() {
+        return getComponents();
+    }
+
+    /**
+     * Subclasses override this to define how child sets are combined.
+     */
+    protected abstract Set<Holder<T>> createSet();
+
     @Override
     protected List<Holder<T>> contents() {
-        return Collections.emptyList();
+        if (resolvedContents == null) {
+            resolvedContents = new ArrayList<>(createSet());
+        }
+        return resolvedContents;
     }
 
     @Override

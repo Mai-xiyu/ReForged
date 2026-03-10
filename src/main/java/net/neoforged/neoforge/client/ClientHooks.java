@@ -1,17 +1,24 @@
 package net.neoforged.neoforge.client;
 
 import com.mojang.datafixers.util.Either;
+import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.color.item.ItemColors;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
+import net.minecraft.client.model.geom.ModelLayerLocation;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
+import java.util.function.Supplier;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +49,27 @@ public class ClientHooks {
 
     public static float getGuiFarPlane() {
         return ForgeHooksClient.getGuiFarPlane();
+    }
+
+    public static void onTextureAtlasStitched(TextureAtlas atlas) {
+        // Forge 1.21.1 does not expose a matching public post-stitch event here.
+        // Keep the NeoForge API entrypoint to preserve binary compatibility.
+    }
+
+    public static void onBlockColorsInit(BlockColors blockColors) {
+        ForgeHooksClient.onBlockColorsInit(blockColors);
+    }
+
+    public static void onItemColorsInit(ItemColors itemColors, BlockColors blockColors) {
+        ForgeHooksClient.onItemColorsInit(itemColors, blockColors);
+    }
+
+    public static void registerLayerDefinition(ModelLayerLocation layerLocation, Supplier<LayerDefinition> supplier) {
+        ForgeHooksClient.registerLayerDefinition(layerLocation, supplier);
+    }
+
+    public static void loadLayerDefinitions(ImmutableMap.Builder<ModelLayerLocation, LayerDefinition> builder) {
+        ForgeHooksClient.loadLayerDefinitions(builder);
     }
 
     // ── Screen Rendering ──────────────────────────────────
@@ -94,5 +122,15 @@ public class ClientHooks {
             int mouseX, int screenWidth, int screenHeight, Font fallbackFont) {
         return ForgeHooksClient.gatherTooltipComponentsFromElements(
                 stack, elements, mouseX, screenWidth, screenHeight, fallbackFont);
+    }
+
+    /**
+     * Triggers a renderer reload (e.g. when experimental pipeline setting changes).
+     */
+    public static void reloadRenderer() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null && mc.levelRenderer != null) {
+            mc.levelRenderer.allChanged();
+        }
     }
 }

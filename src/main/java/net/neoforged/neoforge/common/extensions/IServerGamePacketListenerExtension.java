@@ -1,7 +1,7 @@
 package net.neoforged.neoforge.common.extensions;
 
 /**
- * Stub extension for ServerGamePacketListener.
+ * Extension interface for ServerGamePacketListenerImpl.
  */
 public interface IServerGamePacketListenerExtension {
 }

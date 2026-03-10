@@ -362,9 +362,14 @@ public class DeferredHolder<R, T extends R> implements Holder<T> {
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public boolean is(TagKey<T> tagKey) {
-        // We don't track tags for shim holders
-        return false;
+        ResourceKey key = getKey();
+        if (key == null) return false;
+        Registry registry = (Registry) BuiltInRegistries.REGISTRY.get(key.registry());
+        if (registry == null) return false;
+        Optional<Holder.Reference> opt = registry.getHolder(key);
+        return opt.map(h -> h.is(tagKey)).orElse(false);
     }
 
     @Override
@@ -375,8 +380,14 @@ public class DeferredHolder<R, T extends R> implements Holder<T> {
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Stream<TagKey<T>> tags() {
-        return Stream.empty();
+        ResourceKey key = getKey();
+        if (key == null) return Stream.empty();
+        Registry registry = (Registry) BuiltInRegistries.REGISTRY.get(key.registry());
+        if (registry == null) return Stream.empty();
+        Optional<Holder.Reference> opt = registry.getHolder(key);
+        return opt.map(h -> (Stream<TagKey<T>>) h.tags()).orElse(Stream.empty());
     }
 
     @Override

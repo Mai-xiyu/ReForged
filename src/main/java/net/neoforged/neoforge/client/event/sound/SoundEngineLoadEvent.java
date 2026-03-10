@@ -1,11 +1,13 @@
 package net.neoforged.neoforge.client.event.sound;
 
-import net.minecraftforge.eventbus.api.Event;
+import net.minecraft.client.sounds.SoundEngine;
 import net.neoforged.fml.event.IModBusEvent;
 
 /**
- * Stub: Fired when the sound engine is loaded.
+ * Fired when the sound engine is constructed or reloaded.
  */
-public class SoundEngineLoadEvent extends Event implements IModBusEvent {
-    public SoundEngineLoadEvent() {}
+public class SoundEngineLoadEvent extends SoundEvent implements IModBusEvent {
+    public SoundEngineLoadEvent(SoundEngine manager) {
+        super(manager);
+    }
 }

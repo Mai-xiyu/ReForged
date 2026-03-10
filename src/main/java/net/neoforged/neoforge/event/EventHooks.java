@@ -1,8 +1,11 @@
 package net.neoforged.neoforge.event;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.RegistryAccess;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.world.damagesource.DamageSource;
@@ -10,42 +13,59 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.random.WeightedRandomList;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.Container;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ThrownEnderpearl;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.core.Holder;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.BaseSpawner;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.SpawnData;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.level.storage.PlayerDataStorage;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.ItemAbility;
@@ -55,13 +75,22 @@ import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.MobSplitEvent;
 import net.neoforged.neoforge.event.entity.player.BonemealEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.neoforge.event.level.BlockGrowFeatureEvent;
 import net.neoforged.neoforge.event.level.ExplosionKnockbackEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.common.ToolAction;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 /** Proxy: NeoForge EventHooks — utility for checking/posting events */
 public final class EventHooks {
@@ -336,5 +365,199 @@ public final class EventHooks {
 
     public static EntityTeleportEvent.ChorusFruit onChorusFruitTeleport(LivingEntity entity, double targetX, double targetY, double targetZ) {
         return new EntityTeleportEvent.ChorusFruit(ForgeEventFactory.onChorusFruitTeleport(entity, targetX, targetY, targetZ));
+    }
+
+    // ====== Block Placement / Notification ======
+
+    public static boolean onMultiBlockPlace(@Nullable Entity entity, List<net.minecraftforge.common.util.BlockSnapshot> blockSnapshots, Direction direction) {
+        return ForgeEventFactory.onMultiBlockPlace(entity, blockSnapshots, direction);
+    }
+
+    public static boolean onBlockPlace(@Nullable Entity entity, net.minecraftforge.common.util.BlockSnapshot blockSnapshot, Direction direction) {
+        return ForgeEventFactory.onBlockPlace(entity, blockSnapshot, direction);
+    }
+
+    public static net.minecraftforge.event.level.BlockEvent.NeighborNotifyEvent onNeighborNotify(Level level, BlockPos pos, BlockState state, EnumSet<Direction> notifiedSides, boolean forceRedstoneUpdate) {
+        return ForgeEventFactory.onNeighborNotify(level, pos, state, notifiedSides, forceRedstoneUpdate);
+    }
+
+    // ====== Mob Spawning / Despawning ======
+
+    public static boolean checkSpawnPlacements(EntityType<?> entityType, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random, boolean defaultResult) {
+        return ForgeEventFactory.checkSpawnPlacements(entityType, level, spawnType, pos, random, defaultResult);
+    }
+
+    public static boolean checkSpawnPosition(Mob mob, ServerLevelAccessor level, MobSpawnType spawnType) {
+        return ForgeEventFactory.checkSpawnPosition(mob, level, spawnType);
+    }
+
+    public static boolean checkSpawnPositionSpawner(Mob mob, ServerLevelAccessor level, MobSpawnType spawnType, SpawnData spawnData, BaseSpawner spawner) {
+        return ForgeEventFactory.checkSpawnPositionSpawner(mob, level, spawnType, spawnData, spawner);
+    }
+
+    @Nullable
+    public static SpawnGroupData finalizeMobSpawn(Mob mob, ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnData) {
+        return ForgeEventFactory.onFinalizeSpawn(mob, level, difficulty, spawnType, spawnData);
+    }
+
+    public static boolean checkMobDespawn(Mob entity) {
+        var result = ForgeEventFactory.canEntityDespawn(entity, (ServerLevelAccessor) entity.level());
+        return result == net.minecraftforge.eventbus.api.Event.Result.ALLOW;
+    }
+
+    public static int getMaxSpawnClusterSize(Mob entity) {
+        return ForgeEventFactory.getMaxSpawnPackSize(entity);
+    }
+
+    public static WeightedRandomList<MobSpawnSettings.SpawnerData> getPotentialSpawns(LevelAccessor level, MobCategory category, BlockPos pos, WeightedRandomList<MobSpawnSettings.SpawnerData> oldList) {
+        return ForgeEventFactory.getPotentialSpawns(level, category, pos, oldList);
+    }
+
+    // ====== Tick Events ======
+
+    public static boolean fireEntityTickPre(Entity entity) {
+        EntityTickEvent.Pre event = new EntityTickEvent.Pre(entity);
+        return NeoForge.EVENT_BUS.post(event).isCanceled();
+    }
+
+    public static void fireEntityTickPost(Entity entity) {
+        NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(entity));
+    }
+
+    public static void firePlayerTickPre(Player player) {
+        NeoForge.EVENT_BUS.post(new PlayerTickEvent.Pre(player));
+    }
+
+    public static void firePlayerTickPost(Player player) {
+        NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
+    }
+
+    public static void fireLevelTickPre(Level level, BooleanSupplier haveTime) {
+        NeoForge.EVENT_BUS.post(new LevelTickEvent.Pre(level, haveTime));
+    }
+
+    public static void fireLevelTickPost(Level level, BooleanSupplier haveTime) {
+        NeoForge.EVENT_BUS.post(new LevelTickEvent.Post(level, haveTime));
+    }
+
+    public static void fireServerTickPre(BooleanSupplier haveTime, MinecraftServer server) {
+        NeoForge.EVENT_BUS.post(new ServerTickEvent.Pre(server, haveTime));
+    }
+
+    public static void fireServerTickPost(BooleanSupplier haveTime, MinecraftServer server) {
+        NeoForge.EVENT_BUS.post(new ServerTickEvent.Post(server, haveTime));
+    }
+
+    // ====== Player Events ======
+
+    public static int fireItemPickupPre(ItemEntity itemEntity, Player player) {
+        return ForgeEventFactory.onItemPickup(itemEntity, player);
+    }
+
+    public static void fireItemPickupPost(ItemEntity itemEntity, Player player, ItemStack copy) {
+        ForgeEventFactory.firePlayerItemPickupEvent(player, itemEntity, copy);
+    }
+
+    public static void onPlayerFall(Player player, float distance, float multiplier) {
+        ForgeEventFactory.onPlayerFall(player, distance, multiplier);
+    }
+
+    public static void onAdvancementEarnedEvent(Player player, net.minecraft.advancements.AdvancementHolder advancementHolder) {
+        ForgeEventFactory.onAdvancementEarned(player, advancementHolder);
+    }
+
+    public static void onAdvancementProgressedEvent(Player player, net.minecraft.advancements.AdvancementHolder advancementHolder, net.minecraft.advancements.AdvancementProgress advancementProgress, String criterion, boolean grant) {
+        if (grant) {
+            ForgeEventFactory.onAdvancementGrant(player, advancementHolder, advancementProgress, criterion);
+        } else {
+            ForgeEventFactory.onAdvancementRevoke(player, advancementHolder, advancementProgress, criterion);
+        }
+    }
+
+    // ====== World / Level ======
+
+    public static long onSleepFinished(ServerLevel level, long newTime, long minTime) {
+        return ForgeEventFactory.onSleepFinished(level, newTime, minTime);
+    }
+
+    public static boolean canCreateFluidSource(Level level, BlockPos pos, BlockState state) {
+        return ForgeEventFactory.canCreateFluidSource(level, pos, state, true);
+    }
+
+    public static Optional<PortalShape> onTrySpawnPortal(LevelAccessor level, BlockPos pos, Optional<PortalShape> shape) {
+        return ForgeEventFactory.onTrySpawnPortal(level, pos, shape);
+    }
+
+    public static BlockGrowFeatureEvent fireBlockGrowFeature(LevelAccessor level, RandomSource randomSource, BlockPos pos, @Nullable Holder<ConfiguredFeature<?, ?>> holder) {
+        var forgeEvent = ForgeEventFactory.blockGrowFeature(level, randomSource, pos, holder);
+        return new BlockGrowFeatureEvent(forgeEvent);
+    }
+
+    // ====== Entity / Effects ======
+
+    public static boolean canLivingConvert(LivingEntity entity, EntityType<? extends LivingEntity> outcome, java.util.function.Consumer<Integer> timer) {
+        return ForgeEventFactory.canLivingConvert(entity, outcome, timer);
+    }
+
+    public static void onLivingConvert(LivingEntity original, LivingEntity result) {
+        ForgeEventFactory.onLivingConvert(original, result);
+    }
+
+    public static EntityTeleportEvent.TeleportCommand onEntityTeleportCommand(Entity entity, double targetX, double targetY, double targetZ) {
+        return new EntityTeleportEvent.TeleportCommand(ForgeEventFactory.onEntityTeleportCommand(entity, targetX, targetY, targetZ));
+    }
+
+    public static EntityTeleportEvent.SpreadPlayersCommand onEntityTeleportSpreadPlayersCommand(Entity entity, double targetX, double targetY, double targetZ) {
+        return new EntityTeleportEvent.SpreadPlayersCommand(ForgeEventFactory.onEntityTeleportSpreadPlayersCommand(entity, targetX, targetY, targetZ));
+    }
+
+    public static boolean onEffectRemoved(LivingEntity entity, MobEffectInstance effectInstance) {
+        return ForgeEventFactory.onLivingEffectRemove(entity, effectInstance);
+    }
+
+    public static boolean onEffectRemoved(LivingEntity entity, Holder<MobEffect> effect) {
+        // Forge takes raw MobEffect, not Holder; extract value
+        return ForgeEventFactory.onLivingEffectRemove(entity, effect.value());
+    }
+
+    // ====== Loot / Creative ======
+
+    @Nullable
+    public static LootTable loadLootTable(net.minecraft.resources.ResourceLocation name, LootTable table) {
+        return ForgeEventFactory.onLoadLootTable(name, table);
+    }
+
+    public static void onCreativeModeTabBuildContents(CreativeModeTab tab, ResourceKey<CreativeModeTab> tabKey, CreativeModeTab.DisplayItemsGenerator originalGenerator, CreativeModeTab.ItemDisplayParameters params, CreativeModeTab.Output output) {
+        ForgeHooks.onCreativeModeTabBuildContents(tab, tabKey, originalGenerator, params, output);
+    }
+
+    // ====== Misc ======
+
+    public static void onPlayerSpawnPhantoms(ServerPlayer player, ServerLevel level, BlockPos pos) {
+        ForgeEventFactory.onPlayerSpawnPhantom(player, 1);
+    }
+
+    public static boolean onEntityJoinLevel(Entity entity, Level level) {
+        return ForgeEventFactory.onEntityJoinLevel(entity, level);
+    }
+
+    public static boolean onEntityLeaveLevel(Entity entity, Level level) {
+        return ForgeEventFactory.onEntityLeaveLevel(entity, level);
+    }
+
+    public static void onLevelLoad(Level level) {
+        ForgeEventFactory.onLevelLoad(level);
+    }
+
+    public static void onLevelUnload(Level level) {
+        ForgeEventFactory.onLevelUnload(level);
+    }
+
+    public static void onLevelSave(Level level) {
+        ForgeEventFactory.onLevelSave(level);
+    }
+
+    public static void onTagsUpdated(RegistryAccess registryAccess, boolean fromClientPacket, boolean isIntegratedServerConnection) {
+        ForgeEventFactory.onTagsUpdated(registryAccess, fromClientPacket, isIntegratedServerConnection);
     }
 }

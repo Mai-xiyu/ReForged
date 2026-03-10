@@ -1,11 +1,64 @@
 package net.neoforged.neoforge.registries;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.Event;
 
 /**
- * Stub: Fired when registry ID mappings change (e.g., synced from server).
+ * Called whenever the ID mapping might have changed.
+ *
+ * @deprecated This event is no longer fired, use {@link DeferredRegister#addAlias(ResourceLocation, ResourceLocation)}
+ *             or {@link IRegistryExtension#addAlias(ResourceLocation, ResourceLocation)} instead
  */
+@Deprecated(forRemoval = true, since = "1.20.2")
 public class IdMappingEvent extends Event {
-    public IdMappingEvent() {
+    public static class ModRemapping {
+        public final ResourceLocation registry;
+        public final ResourceLocation key;
+        public final int oldId;
+        public final int newId;
+
+        private ModRemapping(ResourceLocation registry, ResourceLocation key, int oldId, int newId) {
+            this.registry = registry;
+            this.key = key;
+            this.oldId = oldId;
+            this.newId = newId;
+        }
+    }
+
+    public record IdRemapping(int currId, int newId) {}
+
+    private final Map<ResourceLocation, ImmutableList<ModRemapping>> remaps;
+    private final ImmutableSet<ResourceLocation> keys;
+    private final boolean isFrozen;
+
+    public IdMappingEvent(Map<ResourceLocation, Map<ResourceLocation, IdRemapping>> remaps, boolean isFrozen) {
+        this.isFrozen = isFrozen;
+        this.remaps = Maps.newHashMap();
+        remaps.forEach((name, rm) -> {
+            List<ModRemapping> tmp = Lists.newArrayList();
+            rm.forEach((key, value) -> tmp.add(new ModRemapping(name, key, value.currId, value.newId)));
+            tmp.sort(Comparator.comparingInt(o -> o.newId));
+            this.remaps.put(name, ImmutableList.copyOf(tmp));
+        });
+        this.keys = ImmutableSet.copyOf(this.remaps.keySet());
+    }
+
+    public ImmutableSet<ResourceLocation> getRegistries() {
+        return this.keys;
+    }
+
+    public ImmutableList<ModRemapping> getRemaps(ResourceLocation registry) {
+        return this.remaps.get(registry);
+    }
+
+    public boolean isFrozen() {
+        return isFrozen;
     }
 }

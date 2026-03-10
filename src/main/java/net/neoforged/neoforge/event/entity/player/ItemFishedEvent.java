@@ -1,10 +1,28 @@
 package net.neoforged.neoforge.event.entity.player;
 
-import net.minecraft.world.entity.player.Player;
+import java.util.List;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.bus.api.ICancellableEvent;
 
-/** Stub: Fired when a player fishes an item. */
-public class ItemFishedEvent extends PlayerEvent {
-    public ItemFishedEvent(Player player) {
-        super();
+/**
+ * Fired when a player fishes an item. Canceling prevents item drops but hook damage still applies.
+ */
+public class ItemFishedEvent extends PlayerEvent implements ICancellableEvent {
+    private final NonNullList<ItemStack> stacks = NonNullList.create();
+    private final FishingHook hook;
+    private int rodDamage;
+
+    public ItemFishedEvent(List<ItemStack> stacks, int rodDamage, FishingHook hook) {
+        super(hook.getPlayerOwner());
+        this.stacks.addAll(stacks);
+        this.rodDamage = rodDamage;
+        this.hook = hook;
     }
+
+    public int getRodDamage() { return rodDamage; }
+    public void damageRodBy(int rodDamage) { this.rodDamage = rodDamage; }
+    public NonNullList<ItemStack> getDrops() { return stacks; }
+    public FishingHook getHookEntity() { return hook; }
 }

@@ -1,6 +1,8 @@
 package org.xiyu.reforged.shim.attachment;
 
+import com.mojang.serialization.Codec;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * AttachmentType — Shim for NeoForge's data attachment type registry.
@@ -8,7 +10,7 @@ import java.util.function.Supplier;
  * <p>NeoForge mods create attachment types via:</p>
  * <pre>
  * public static final AttachmentType&lt;MyData&gt; MY_ATTACHMENT =
- *     AttachmentType.builder(() -&gt; new MyData()).build();
+ *     AttachmentType.builder(() -&gt; new MyData()).serialize(MyData.CODEC).build();
  * </pre>
  *
  * @param <T> the attachment data type
@@ -18,11 +20,14 @@ public final class AttachmentType<T> {
     private final String id;
     private final Supplier<T> defaultValue;
     private final boolean serialize;
+    @Nullable
+    private final Codec<T> codec;
 
     private AttachmentType(Builder<T> builder) {
         this.id = builder.id != null ? builder.id : "unknown";
         this.defaultValue = builder.defaultValue;
         this.serialize = builder.serialize;
+        this.codec = builder.codec;
     }
 
     public String id() {
@@ -34,7 +39,15 @@ public final class AttachmentType<T> {
     }
 
     public boolean shouldSerialize() {
-        return serialize;
+        return serialize && codec != null;
+    }
+
+    /**
+     * Returns the codec for serialization, or null if not serializable.
+     */
+    @Nullable
+    public Codec<T> codec() {
+        return codec;
     }
 
     // ─── Builder (matches NeoForge's API) ──────────────────────
@@ -57,7 +70,8 @@ public final class AttachmentType<T> {
         private Supplier<T> defaultValue;
         private String id;
         private boolean serialize = false;
-        private Object serializer; // codec reference, not used in shim
+        @Nullable
+        private Codec<T> codec;
 
         Builder(Supplier<T> defaultValue) {
             this.defaultValue = defaultValue;
@@ -65,19 +79,24 @@ public final class AttachmentType<T> {
 
         /**
          * Set the serializer (NeoForge uses a Codec).
-         * In our shim, we store the reference but don't actually serialize.
          */
+        @SuppressWarnings("unchecked")
         public Builder<T> serialize(Object codecOrSerializer) {
-            this.serializer = codecOrSerializer;
+            if (codecOrSerializer instanceof Codec<?> c) {
+                this.codec = (Codec<T>) c;
+            }
             this.serialize = true;
             return this;
         }
 
         /**
-         * Set the serializer with a condition.
+         * Set the serializer with a copy handler.
          */
+        @SuppressWarnings("unchecked")
         public Builder<T> serialize(Object codec, Object copyHandler) {
-            this.serializer = codec;
+            if (codec instanceof Codec<?> c) {
+                this.codec = (Codec<T>) c;
+            }
             this.serialize = true;
             return this;
         }

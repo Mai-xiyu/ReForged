@@ -162,15 +162,37 @@ public final class FluidStack {
     }
 
     public void applyComponents(DataComponentMap map) {
-        // no-op simplified
+        for (var typed : map) {
+            applyTyped(typed);
+        }
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> void applyTyped(net.minecraft.core.component.TypedDataComponent<T> typed) {
+        components.set(typed.type(), typed.value());
+    }
+
+    private static final StreamCodec<RegistryFriendlyByteBuf, Holder<Fluid>> FLUID_HOLDER_STREAM_CODEC =
+            net.minecraft.network.codec.ByteBufCodecs.holderRegistry(net.minecraft.core.registries.Registries.FLUID);
+
     private static void encode(RegistryFriendlyByteBuf buf, FluidStack stack) {
-        // simplified stub
+        if (stack.isEmpty()) {
+            buf.writeVarInt(0);
+        } else {
+            buf.writeVarInt(stack.getAmount());
+            FLUID_HOLDER_STREAM_CODEC.encode(buf, stack.getFluidHolder());
+            DataComponentPatch.STREAM_CODEC.encode(buf, stack.components.asPatch());
+        }
     }
 
     private static FluidStack decode(RegistryFriendlyByteBuf buf) {
-        return EMPTY; // simplified stub
+        int amount = buf.readVarInt();
+        if (amount <= 0) {
+            return EMPTY;
+        }
+        Holder<Fluid> holder = FLUID_HOLDER_STREAM_CODEC.decode(buf);
+        DataComponentPatch patch = DataComponentPatch.STREAM_CODEC.decode(buf);
+        return new FluidStack(holder, amount, patch);
     }
 
     @Override

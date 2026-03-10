@@ -1,5 +1,6 @@
 package net.neoforged.neoforge.client.model.generators;
 
+import com.google.gson.JsonObject;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
@@ -64,6 +65,28 @@ public class ModelBuilder<T extends ModelBuilder<T>> extends ModelFile {
     @Override
     protected boolean exists() {
         return true;
+    }
+
+    /**
+     * Serializes this model builder to a JSON object for data generation.
+     */
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        if (parent != null) {
+            json.addProperty("parent", parent.getLocation().toString());
+        }
+        if (!textures.isEmpty()) {
+            JsonObject tex = new JsonObject();
+            textures.forEach(tex::addProperty);
+            json.add("textures", tex);
+        }
+        if (renderType != null) {
+            json.addProperty("render_type", renderType);
+        }
+        if (!ambientOcclusion) {
+            json.addProperty("ambientocclusion", false);
+        }
+        return json;
     }
 
     public static class ElementBuilder {

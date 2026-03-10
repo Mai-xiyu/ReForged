@@ -1,11 +1,22 @@
 package net.neoforged.neoforge.event.brewing;
 
-import net.minecraftforge.eventbus.api.Event;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.world.item.alchemy.PotionBrewing;
+import net.neoforged.bus.api.Event;
 
 /**
- * Stub: Fired to allow mods to register brewing recipes.
+ * Event to register new brewing recipes.
+ * Fired on both client and server side, on the main event bus.
  */
 public class RegisterBrewingRecipesEvent extends Event {
-    public RegisterBrewingRecipesEvent() {
+    private final PotionBrewing.Builder builder;
+    private final RegistryAccess registryAccess;
+
+    public RegisterBrewingRecipesEvent(PotionBrewing.Builder builder, RegistryAccess registryAccess) {
+        this.builder = builder;
+        this.registryAccess = registryAccess;
     }
+
+    public PotionBrewing.Builder getBuilder() { return builder; }
+    public RegistryAccess getRegistryAccess() { return registryAccess; }
 }

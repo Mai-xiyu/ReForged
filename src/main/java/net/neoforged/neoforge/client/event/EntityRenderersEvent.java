@@ -1,5 +1,7 @@
 package net.neoforged.neoforge.client.event;
 
+import com.google.common.collect.ImmutableMap;
+import net.minecraft.client.model.SkullModelBase;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
@@ -11,6 +13,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.fml.event.IModBusEvent;
@@ -109,5 +112,29 @@ public abstract class EntityRenderersEvent extends net.neoforged.bus.api.Event i
         }
     }
 
-    public static class CreateSkullModels extends EntityRenderersEvent {}
+    public static class CreateSkullModels extends EntityRenderersEvent {
+        private final ImmutableMap.Builder<SkullBlock.Type, SkullModelBase> builder;
+        private final EntityModelSet entityModelSet;
+
+        public CreateSkullModels(net.minecraftforge.client.event.EntityRenderersEvent.CreateSkullModels delegate) {
+            this.builder = null;
+            this.entityModelSet = delegate.getEntityModelSet();
+        }
+
+        public CreateSkullModels(ImmutableMap.Builder<SkullBlock.Type, SkullModelBase> builder, EntityModelSet entityModelSet) {
+            this.builder = builder;
+            this.entityModelSet = entityModelSet;
+        }
+
+        public EntityModelSet getEntityModelSet() {
+            return entityModelSet;
+        }
+
+        public void registerSkullModel(SkullBlock.Type type, SkullModelBase model) {
+            if (builder == null) {
+                throw new IllegalStateException("Skull model registration is not available for this wrapper instance");
+            }
+            builder.put(type, model);
+        }
+    }
 }

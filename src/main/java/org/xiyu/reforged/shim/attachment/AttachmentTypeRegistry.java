@@ -3,8 +3,10 @@ package org.xiyu.reforged.shim.attachment;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.IForgeRegistry;
 import com.mojang.logging.LogUtils;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -16,6 +18,18 @@ import java.util.function.Supplier;
 public final class AttachmentTypeRegistry {
 
     private static final Logger LOGGER = LogUtils.getLogger();
+
+    /** Global map of registered attachment types by id (namespace:name). */
+    private static final ConcurrentHashMap<String, AttachmentType<?>> TYPES = new ConcurrentHashMap<>();
+
+    /**
+     * Look up a registered attachment type by its full id (e.g., "mymod:my_data").
+     * Used during deserialization.
+     */
+    @Nullable
+    public static AttachmentType<?> getById(String id) {
+        return TYPES.get(id);
+    }
 
     /**
      * Create a deferred register for attachment types.
@@ -41,8 +55,10 @@ public final class AttachmentTypeRegistry {
          * Register an attachment type.
          */
         public <T> Supplier<AttachmentType<T>> register(String name, Supplier<AttachmentType.Builder<T>> builderSupplier) {
-            AttachmentType<T> type = builderSupplier.get().build();
-            LOGGER.info("[ReForged] Registered attachment type: {}:{}", modId, name);
+            String fullId = modId + ":" + name;
+            AttachmentType<T> type = builderSupplier.get().id(fullId).build();
+            TYPES.put(fullId, type);
+            LOGGER.info("[ReForged] Registered attachment type: {}", fullId);
             return () -> type;
         }
 

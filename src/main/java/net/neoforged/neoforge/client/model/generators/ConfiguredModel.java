@@ -1,7 +1,11 @@
 package net.neoforged.neoforge.client.model.generators;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 /**
- * Stub: NeoForge ConfiguredModel — represents a model with rotation/UV lock configuration.
+ * NeoForge ConfiguredModel — represents a model with rotation/UV lock configuration.
  */
 public class ConfiguredModel {
     public final ModelFile model;
@@ -22,16 +26,49 @@ public class ConfiguredModel {
         this.weight = weight;
     }
 
+    public JsonObject toJSON() {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("model", model.getLocation().toString());
+        if (rotationX != 0) obj.addProperty("x", rotationX);
+        if (rotationY != 0) obj.addProperty("y", rotationY);
+        if (uvLock) obj.addProperty("uvlock", true);
+        if (weight != 1) obj.addProperty("weight", weight);
+        return obj;
+    }
+
+    public static JsonElement toJSON(ConfiguredModel[] models) {
+        if (models.length == 1) {
+            return models[0].toJSON();
+        }
+        JsonArray arr = new JsonArray();
+        for (ConfiguredModel m : models) {
+            arr.add(m.toJSON());
+        }
+        return arr;
+    }
+
     public static ConfiguredModel[] allRotations(ModelFile model, boolean uvlock) {
         return new ConfiguredModel[]{new ConfiguredModel(model)};
     }
 
     public static ConfiguredModel[] allYRotations(ModelFile model, int x, boolean uvlock) {
-        return new ConfiguredModel[]{new ConfiguredModel(model, x, 0, uvlock, 1)};
+        ConfiguredModel[] models = new ConfiguredModel[4];
+        for (int i = 0; i < 4; i++) {
+            models[i] = new ConfiguredModel(model, x, i * 90, uvlock, 1);
+        }
+        return models;
+    }
+
+    public static <T> Builder<T> builder(T parent, VariantBlockStateBuilder.PartialBlockstate state) {
+        return new Builder<>(parent, models -> state.addModels(models));
+    }
+
+    public static Builder<MultiPartBlockStateBuilder.PartBuilder> builderForPart(MultiPartBlockStateBuilder.PartBuilder part) {
+        return new Builder<>(part, models -> part.models = models);
     }
 
     public static Builder<?> builder() {
-        return new Builder<>();
+        return new Builder<>(null, m -> {});
     }
 
     public static class Builder<T> {
@@ -40,6 +77,13 @@ public class ConfiguredModel {
         private int rotationY;
         private boolean uvLock;
         private int weight = 1;
+        private final T parent;
+        private final java.util.function.Consumer<ConfiguredModel[]> callback;
+
+        Builder(T parent, java.util.function.Consumer<ConfiguredModel[]> callback) {
+            this.parent = parent;
+            this.callback = callback;
+        }
 
         public Builder<T> modelFile(ModelFile model) { this.model = model; return this; }
         public Builder<T> rotationX(int x) { this.rotationX = x; return this; }
@@ -52,6 +96,9 @@ public class ConfiguredModel {
         }
 
         @SuppressWarnings("unchecked")
-        public T addModel() { return (T) this; }
+        public T addModel() {
+            callback.accept(buildLast());
+            return parent;
+        }
     }
 }

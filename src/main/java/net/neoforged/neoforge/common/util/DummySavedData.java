@@ -1,17 +1,33 @@
 package net.neoforged.neoforge.common.util;
 
-import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.nbt.CompoundTag;
+import java.io.File;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.saveddata.SavedData;
 
 /**
- * Stub: Dummy saved data that does nothing.
+ * A no-op {@link SavedData} implementation which does not store data.
+ *
+ * @deprecated This type often causes more data corruption than is worth.
  */
+@Deprecated(since = "1.21.1", forRemoval = true)
 public class DummySavedData extends SavedData {
-    public static final DummySavedData INSTANCE = new DummySavedData();
+    public static final DummySavedData DUMMY = new DummySavedData();
+    /** @deprecated Use {@link #DUMMY} */
+    @Deprecated
+    public static final DummySavedData INSTANCE = DUMMY;
+
+    private DummySavedData() {
+        super();
+    }
 
     @Override
-    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-        return tag;
+    public CompoundTag save(final CompoundTag compound, HolderLookup.Provider provider) {
+        return null;
+    }
+
+    @Override
+    public void save(final File file, final HolderLookup.Provider provider) {
+        // Do nothing, to avoid overwriting saved data that may already be here.
     }
 }

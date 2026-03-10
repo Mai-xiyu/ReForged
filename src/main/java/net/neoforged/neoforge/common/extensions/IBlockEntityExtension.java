@@ -42,8 +42,22 @@ public interface IBlockEntityExtension {
         self().loadWithComponents(tag, lookupProvider);
     }
 
+    /**
+     * Returns a persistent custom data tag for this BlockEntity.
+     * Data stored here persists across saves/loads if the BE implementation
+     * includes it in save/load. Backed by a per-instance cache.
+     */
     default CompoundTag getPersistentData() {
-        return new CompoundTag();
+        return PersistentDataCache.getOrCreate(self());
+    }
+
+    /** Per-instance cache for getPersistentData() */
+    final class PersistentDataCache {
+        private static final java.util.Map<Integer, CompoundTag> CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+
+        static CompoundTag getOrCreate(BlockEntity be) {
+            return CACHE.computeIfAbsent(System.identityHashCode(be), k -> new CompoundTag());
+        }
     }
 
     default void onChunkUnloaded() {

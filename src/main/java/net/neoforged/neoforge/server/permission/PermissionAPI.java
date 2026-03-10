@@ -2,7 +2,9 @@ package net.neoforged.neoforge.server.permission;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.server.permission.nodes.PermissionDynamicContext;
 import net.neoforged.neoforge.server.permission.nodes.PermissionNode;
@@ -14,8 +16,23 @@ import org.jetbrains.annotations.Nullable;
 public final class PermissionAPI {
     private PermissionAPI() {}
 
+    private static final Set<PermissionNode<?>> registeredNodes = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Returns all permission nodes that have been registered via
+     * {@link net.neoforged.neoforge.server.permission.events.PermissionGatherEvent.Nodes}.
+     */
     public static Collection<PermissionNode<?>> getRegisteredNodes() {
-        return Collections.emptySet();
+        return Collections.unmodifiableSet(registeredNodes);
+    }
+
+    /**
+     * Stores the nodes collected during the permission gather event.
+     * Called internally after the {@code PermissionGatherEvent.Nodes} event fires.
+     */
+    public static void setRegisteredNodes(Collection<PermissionNode<?>> nodes) {
+        registeredNodes.clear();
+        registeredNodes.addAll(nodes);
     }
 
     @Nullable

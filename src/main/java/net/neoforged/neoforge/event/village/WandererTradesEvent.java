@@ -1,22 +1,25 @@
 package net.neoforged.neoforge.event.village;
 
+import java.util.List;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraftforge.eventbus.api.Event;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Stub: Fired to allow mods to register wandering trader trades.
+ * Fired to allow mods to add trades to the wandering trader.
  */
 public class WandererTradesEvent extends Event {
-    private final List<Object> genericTrades;
-    private final List<Object> rareTrades;
+    private final List<VillagerTrades.ItemListing> genericTrades;
+    private final List<VillagerTrades.ItemListing> rareTrades;
+    private final RegistryAccess registryAccess;
 
-    public WandererTradesEvent() {
-        this.genericTrades = new ArrayList<>();
-        this.rareTrades = new ArrayList<>();
+    public WandererTradesEvent(List<VillagerTrades.ItemListing> genericTrades, List<VillagerTrades.ItemListing> rareTrades, RegistryAccess registryAccess) {
+        this.genericTrades = genericTrades;
+        this.rareTrades = rareTrades;
+        this.registryAccess = registryAccess;
     }
 
-    public List<Object> getGenericTrades() { return genericTrades; }
-    public List<Object> getRareTrades() { return rareTrades; }
+    public List<VillagerTrades.ItemListing> getGenericTrades() { return genericTrades; }
+    public List<VillagerTrades.ItemListing> getRareTrades() { return rareTrades; }
+    public RegistryAccess getRegistryAccess() { return registryAccess; }
 }

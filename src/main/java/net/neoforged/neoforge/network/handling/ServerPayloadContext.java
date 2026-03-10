@@ -8,9 +8,10 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import org.xiyu.reforged.shim.network.PayloadChannelRegistry;
 
 /**
- * Stub: Server-side payload context implementation.
+ * Server-side payload context implementation.
  */
 public class ServerPayloadContext implements IPayloadContext {
     private final ServerPlayer player;
@@ -31,6 +32,7 @@ public class ServerPayloadContext implements IPayloadContext {
 
     @Override
     public void reply(CustomPacketPayload payload) {
+        PayloadChannelRegistry.sendViaConnection(connection(), payload);
     }
 
     @Override

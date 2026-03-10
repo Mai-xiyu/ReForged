@@ -24,7 +24,7 @@ public class DatapackBuiltinEntriesProvider extends RegistriesDatapackGenerator 
     public DatapackBuiltinEntriesProvider(PackOutput output,
                                            CompletableFuture<RegistrySetBuilder.PatchedRegistries> registries,
                                            Set<String> modIds) {
-        super(output, registries.thenApply(RegistrySetBuilder.PatchedRegistries::full), modIds);
+        super(output, registries.thenApply(RegistrySetBuilder.PatchedRegistries::patches), modIds);
         this.fullRegistries = registries.thenApply(RegistrySetBuilder.PatchedRegistries::full);
     }
 

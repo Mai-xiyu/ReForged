@@ -1,7 +1,10 @@
 package net.neoforged.neoforge.client.model.generators;
 
+import com.google.gson.JsonObject;
+
 /**
- * Stub: NeoForge IGeneratedBlockState — marker interface for generated block states.
+ * Marker interface for generated block states that can serialize to JSON.
  */
 public interface IGeneratedBlockState {
+    JsonObject toJson();
 }

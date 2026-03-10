@@ -1,5 +1,7 @@
 package net.neoforged.neoforge.common.data;
 
+import com.google.gson.JsonObject;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -15,9 +17,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.extensions.ILevelExtension;
 
 /**
- * Stub: NeoForge LanguageProvider — data provider for language (translation) files.
+ * NeoForge LanguageProvider — data provider for language (translation) files.
  */
 public abstract class LanguageProvider implements DataProvider {
     private final Map<String, String> data = new TreeMap<>();
@@ -36,26 +40,79 @@ public abstract class LanguageProvider implements DataProvider {
     @Override
     public CompletableFuture<?> run(CachedOutput cache) {
         addTranslations();
-        return CompletableFuture.completedFuture(null);
+        if (!data.isEmpty()) {
+            return save(cache, this.output.getOutputFolder(PackOutput.Target.RESOURCE_PACK)
+                    .resolve(this.modid).resolve("lang").resolve(this.locale + ".json"));
+        }
+        return CompletableFuture.allOf();
     }
-
-    public void addBlock(Supplier<? extends Block> key, String name) {}
-    public void add(Block key, String name) {}
-    public void addItem(Supplier<? extends Item> key, String name) {}
-    public void add(Item key, String name) {}
-    public void addItemStack(Supplier<ItemStack> key, String name) {}
-    public void add(ItemStack key, String name) {}
-    public void addEffect(Supplier<? extends MobEffect> key, String name) {}
-    public void add(MobEffect key, String name) {}
-    public void addEntityType(Supplier<? extends EntityType<?>> key, String name) {}
-    public void add(EntityType<?> key, String name) {}
-    public void addTag(Supplier<? extends TagKey<?>> key, String name) {}
-    public void add(TagKey<?> tagKey, String name) {}
-    public void add(String key, String value) { data.put(key, value); }
-    public void addDimension(ResourceKey<Level> dimension, String value) {}
 
     @Override
     public String getName() {
-        return "Languages: " + modid;
+        return "Languages: " + locale + " for mod: " + modid;
+    }
+
+    private CompletableFuture<?> save(CachedOutput cache, Path target) {
+        JsonObject json = new JsonObject();
+        this.data.forEach(json::addProperty);
+        return DataProvider.saveStable(cache, json, target);
+    }
+
+    public void addBlock(Supplier<? extends Block> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(Block key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addItem(Supplier<? extends Item> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(Item key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addItemStack(Supplier<ItemStack> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(ItemStack key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addEffect(Supplier<? extends MobEffect> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(MobEffect key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addEntityType(Supplier<? extends EntityType<?>> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(EntityType<?> key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addTag(Supplier<? extends TagKey<?>> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(TagKey<?> tagKey, String name) {
+        add(Tags.getTagTranslationKey(tagKey), name);
+    }
+
+    public void add(String key, String value) {
+        if (data.put(key, value) != null) {
+            throw new IllegalStateException("Duplicate translation key " + key);
+        }
+    }
+
+    public void addDimension(ResourceKey<Level> dimension, String value) {
+        add(dimension.location().toLanguageKey(ILevelExtension.TRANSLATION_PREFIX), value);
     }
 }

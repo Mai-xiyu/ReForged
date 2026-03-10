@@ -1,5 +1,6 @@
 package net.neoforged.neoforge.client.event;
 
+import com.google.common.base.Preconditions;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -19,6 +20,8 @@ import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
  * Houses events related to models.
  */
 public abstract class ModelEvent extends Event {
+	private static final String STANDALONE_VARIANT = "standalone";
+
     protected ModelEvent() {}
 
     /**
@@ -74,6 +77,9 @@ public abstract class ModelEvent extends Event {
         }
 
         public void register(ModelResourceLocation model) {
+            Preconditions.checkArgument(
+                    model.getVariant().equals(STANDALONE_VARIANT),
+                    "Side-loaded models must use the '" + STANDALONE_VARIANT + "' variant");
             models.add(model);
         }
     }
@@ -89,6 +95,7 @@ public abstract class ModelEvent extends Event {
         }
 
         public void register(ResourceLocation key, IGeometryLoader<?> loader) {
+            Preconditions.checkArgument(!loaders.containsKey(key), "Geometry loader already registered: " + key);
             loaders.put(key, loader);
         }
     }

@@ -28,4 +28,12 @@ public record RenderTypeGroup(RenderType block, RenderType entity, RenderType en
         if (forgeGroup.isEmpty()) return EMPTY;
         return new RenderTypeGroup(forgeGroup.block(), forgeGroup.entity(), forgeGroup.entityFabulous());
     }
+
+    /**
+     * Convert this NeoForge RenderTypeGroup to a Forge RenderTypeGroup.
+     */
+    public net.minecraftforge.client.RenderTypeGroup toForge() {
+        if (isEmpty()) return net.minecraftforge.client.RenderTypeGroup.EMPTY;
+        return new net.minecraftforge.client.RenderTypeGroup(block, entity, entityFabulous);
+    }
 }

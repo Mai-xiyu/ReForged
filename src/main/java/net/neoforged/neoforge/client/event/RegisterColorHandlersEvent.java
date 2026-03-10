@@ -1,9 +1,11 @@
 package net.neoforged.neoforge.client.event;
 
+import com.google.common.collect.ImmutableList;
 import net.minecraft.client.color.block.BlockColor;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.color.item.ItemColors;
+import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.fml.event.IModBusEvent;
 
@@ -54,5 +56,15 @@ public abstract class RegisterColorHandlersEvent extends net.neoforged.bus.api.E
         }
     }
 
-    public static class ColorResolvers extends RegisterColorHandlersEvent {}
+    public static class ColorResolvers extends RegisterColorHandlersEvent {
+        private final ImmutableList.Builder<ColorResolver> builder;
+
+        public ColorResolvers(ImmutableList.Builder<ColorResolver> builder) {
+            this.builder = builder;
+        }
+
+        public void register(ColorResolver resolver) {
+            this.builder.add(resolver);
+        }
+    }
 }

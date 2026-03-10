@@ -2,8 +2,14 @@ package net.neoforged.neoforge.common.damagesource;
 
 import net.minecraft.world.damagesource.DamageSource;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 
+/**
+ * Container for tracking damage values through the damage pipeline.
+ * Stores the original damage, current damage, blocked amounts, reductions, and modifiers.
+ */
 public class DamageContainer {
 	public enum Reduction {
 		INVULNERABILITY,
@@ -21,6 +27,7 @@ public class DamageContainer {
 	private float shieldDamage;
 	private int postAttackInvulnerabilityTicks = 20;
 	private final EnumMap<Reduction, Float> reductions = new EnumMap<>(Reduction.class);
+	private final EnumMap<Reduction, List<IReductionFunction>> reductionFunctions = new EnumMap<>(Reduction.class);
 
 	public DamageContainer() {
 		this.source = null;
@@ -80,5 +87,27 @@ public class DamageContainer {
 
 	public void setReduction(Reduction reduction, float amount) {
 		reductions.put(reduction, amount);
+	}
+
+	/**
+	 * Adds a modifier function for a specific reduction type.
+	 * The modifier will be applied before the reduction value is used.
+	 */
+	public void addReductionModifier(Reduction reduction, IReductionFunction function) {
+		reductionFunctions.computeIfAbsent(reduction, k -> new ArrayList<>()).add(function);
+	}
+
+	/**
+	 * Applies all registered reduction modifiers and returns the final reduction value.
+	 */
+	public float getModifiedReduction(Reduction reduction) {
+		float value = getReduction(reduction);
+		List<IReductionFunction> functions = reductionFunctions.get(reduction);
+		if (functions != null) {
+			for (IReductionFunction fn : functions) {
+				value = fn.modify(this, value);
+			}
+		}
+		return value;
 	}
 }
