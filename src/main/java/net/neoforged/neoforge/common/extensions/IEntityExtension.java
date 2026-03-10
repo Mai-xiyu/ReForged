@@ -27,12 +27,21 @@ import java.util.Collection;
 
 /**
  * Stub extension interface for Entity.
+ *
+ * <p><b>IMPORTANT:</b> Methods that also exist as {@code default} in Forge's
+ * {@link IForgeEntity} are intentionally omitted here to avoid
+ * {@code IncompatibleClassChangeError} at runtime. Entity already inherits
+ * those defaults from IForgeEntity. Only methods unique to the NeoForge API
+ * surface or with different JVM descriptors (e.g. NeoForge FluidType params)
+ * are declared here.</p>
  */
 public interface IEntityExtension {
 
     default Entity self() {
         return (Entity) this;
     }
+
+    // ─── Methods that DON'T conflict with IForgeEntity ──────────────────
 
     @Nullable
     default Collection<ItemEntity> captureDrops() {
@@ -47,28 +56,7 @@ public interface IEntityExtension {
         return self().getPersistentData();
     }
 
-    default boolean shouldRiderSit() {
-        return true;
-    }
-
-    @Nullable
-    default ItemStack getPickedResult(HitResult target) {
-        return self().getPickResult();
-    }
-
-    default boolean canRiderInteract() {
-        return false;
-    }
-
-    default boolean canBeRiddenUnderFluidType(FluidType type, Entity rider) {
-        return ((IForgeEntity) self()).canBeRiddenUnderFluidType(type, rider);
-    }
-
     boolean canTrample(BlockState state, BlockPos pos, float fallDistance);
-
-    default MobCategory getClassification(boolean forSpawnCount) {
-        return self().getType().getCategory();
-    }
 
     default boolean isAddedToLevel() {
         return ((IForgeEntity) self()).isAddedToWorld();
@@ -86,14 +74,16 @@ public interface IEntityExtension {
         ((IForgeEntity) self()).revive();
     }
 
-    default boolean isMultipartEntity() {
-        return ((IForgeEntity) self()).isMultipartEntity();
-    }
-
+    /**
+     * NeoForge's getParts returns NeoForge PartEntity — different return type
+     * from IForgeEntity's getParts (Forge PartEntity), so no JVM conflict.
+     */
     @Nullable
     default PartEntity<?>[] getParts() {
         return null;
     }
+
+    // ─── FluidType methods with NeoForge FluidType parameter (no conflict) ──
 
     default double getFluidTypeHeight(FluidType type) {
         return ((IForgeEntity) self()).getFluidTypeHeight(type);
@@ -105,16 +95,8 @@ public interface IEntityExtension {
         return fluidType instanceof FluidType neoFluid ? neoFluid : null;
     }
 
-    default boolean isInFluidType(FluidState state) {
-        return ((IForgeEntity) self()).isInFluidType(state);
-    }
-
     default boolean isInFluidType(FluidType type) {
         return ((IForgeEntity) self()).isInFluidType(type);
-    }
-
-    default boolean isInFluidType(BiPredicate<FluidType, Double> predicate) {
-        return isInFluidType(predicate, false);
     }
 
     default boolean isInFluidType(BiPredicate<FluidType, Double> predicate, boolean forAllTypes) {
@@ -133,11 +115,6 @@ public interface IEntityExtension {
 
     default boolean isEyeInFluidType(FluidType type) {
         return type == this.getEyeInFluidType();
-    }
-
-    default boolean canStartSwimming() {
-        FluidType eyeFluid = this.getEyeInFluidType();
-        return eyeFluid != null && !eyeFluid.isAir() && this.canSwimInFluidType(eyeFluid);
     }
 
     default double getFluidMotionScale(FluidType type) {
@@ -164,14 +141,16 @@ public interface IEntityExtension {
         return ((IForgeEntity) self()).canHydrateInFluidType(type);
     }
 
+    default boolean canBeRiddenUnderFluidType(FluidType type, Entity rider) {
+        return ((IForgeEntity) self()).canBeRiddenUnderFluidType(type, rider);
+    }
+
     @Nullable
     default SoundEvent getSoundFromFluidType(FluidType type, SoundAction action) {
         return ((IForgeEntity) self()).getSoundFromFluidType(type, net.minecraftforge.common.SoundAction.get(action.name()));
     }
 
-    default boolean hasCustomOutlineRendering(Player player) {
-        return ((IForgeEntity) self()).hasCustomOutlineRendering(player);
-    }
+    // ─── NeoForge-only methods ──────────────────────────────────────────
 
     default void sendPairingData(ServerPlayer serverPlayer, Consumer<CustomPacketPayload> bundleBuilder) {
         // Complex spawn payload bridging is wired later with payload codec support.
@@ -185,20 +164,23 @@ public interface IEntityExtension {
         self().canUpdate(value);
     }
 
-    default CompoundTag serializeNBT(HolderLookup.Provider registryAccess) {
-        CompoundTag ret = new CompoundTag();
-        String id = self().getEncodeId();
-        if (id != null) {
-            ret.putString("id", id);
-        }
-        return self().saveWithoutId(ret);
-    }
-
-    default void deserializeNBT(HolderLookup.Provider registryAccess, CompoundTag nbt) {
-        self().load(nbt);
-    }
-
     default void copyAttachmentsFrom(Entity other, boolean isDeath) {
         AttachmentInternals.copyEntityAttachments(other, self(), isDeath);
     }
+
+    // ─── The following methods are INTENTIONALLY OMITTED because they ───
+    // ─── conflict with IForgeEntity default methods (same JVM descriptor) ─
+    // ─── Entity inherits them from IForgeEntity automatically. ──────────
+    //
+    // shouldRiderSit()
+    // getPickedResult(HitResult)
+    // canRiderInteract()
+    // getClassification(boolean)
+    // isMultipartEntity()
+    // isInFluidType(FluidState)
+    // isInFluidType(BiPredicate)  [1-arg, erased same as Forge's]
+    // canStartSwimming()
+    // hasCustomOutlineRendering(Player)
+    // serializeNBT(HolderLookup.Provider)
+    // deserializeNBT(HolderLookup.Provider, CompoundTag)
 }
