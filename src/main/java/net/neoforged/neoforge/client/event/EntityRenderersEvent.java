@@ -1,6 +1,7 @@
 package net.neoforged.neoforge.client.event;
 
 import com.google.common.collect.ImmutableMap;
+import java.lang.reflect.Field;
 import net.minecraft.client.model.SkullModelBase;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -117,8 +118,24 @@ public abstract class EntityRenderersEvent extends net.neoforged.bus.api.Event i
         private final EntityModelSet entityModelSet;
 
         public CreateSkullModels(net.minecraftforge.client.event.EntityRenderersEvent.CreateSkullModels delegate) {
-            this.builder = null;
+            this.builder = extractBuilder(delegate);
             this.entityModelSet = delegate.getEntityModelSet();
+        }
+
+        /**
+         * Extract the ImmutableMap.Builder from the Forge event delegate via reflection.
+         * Falls back to a new builder if reflection fails (skull models won't register but no crash).
+         */
+        @SuppressWarnings("unchecked")
+        private static ImmutableMap.Builder<SkullBlock.Type, SkullModelBase> extractBuilder(
+                net.minecraftforge.client.event.EntityRenderersEvent.CreateSkullModels delegate) {
+            try {
+                Field f = delegate.getClass().getDeclaredField("builder");
+                f.setAccessible(true);
+                return (ImmutableMap.Builder<SkullBlock.Type, SkullModelBase>) f.get(delegate);
+            } catch (Throwable t) {
+                return new ImmutableMap.Builder<>();
+            }
         }
 
         public CreateSkullModels(ImmutableMap.Builder<SkullBlock.Type, SkullModelBase> builder, EntityModelSet entityModelSet) {
@@ -131,9 +148,6 @@ public abstract class EntityRenderersEvent extends net.neoforged.bus.api.Event i
         }
 
         public void registerSkullModel(SkullBlock.Type type, SkullModelBase model) {
-            if (builder == null) {
-                throw new IllegalStateException("Skull model registration is not available for this wrapper instance");
-            }
             builder.put(type, model);
         }
     }

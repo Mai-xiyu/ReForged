@@ -1,6 +1,7 @@
 package net.neoforged.neoforge.client.event;
 
 import com.google.common.base.Preconditions;
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -23,6 +24,21 @@ public abstract class ModelEvent extends Event {
 	private static final String STANDALONE_VARIANT = "standalone";
 
     protected ModelEvent() {}
+
+    /**
+     * Reflectively extract a field value from a Forge event delegate.
+     * Falls back to the provided default if reflection fails.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T extractField(Object delegate, String fieldName, T fallback) {
+        try {
+            Field f = delegate.getClass().getDeclaredField(fieldName);
+            f.setAccessible(true);
+            return (T) f.get(delegate);
+        } catch (Throwable t) {
+            return fallback;
+        }
+    }
 
     /**
      * Fired after model registry is set up, before caching in BlockModelShaper.
@@ -87,8 +103,9 @@ public abstract class ModelEvent extends Event {
         }
 
         /** Wrapper constructor for EventBusAdapter bridging. */
+        @SuppressWarnings("unchecked")
         public RegisterAdditional(net.minecraftforge.client.event.ModelEvent.RegisterAdditional forge) {
-            this(new java.util.HashSet<>());
+            this(extractField(forge, "models", new java.util.HashSet<>()));
         }
 
         public void register(ModelResourceLocation model) {
@@ -110,8 +127,29 @@ public abstract class ModelEvent extends Event {
         }
 
         /** Wrapper constructor for EventBusAdapter bridging. */
+        @SuppressWarnings("unchecked")
         public RegisterGeometryLoaders(net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders forge) {
-            this(new java.util.HashMap<>());
+            this(extractForgeLoaders(forge));
+        }
+
+        /**
+         * Extract the loaders map from the Forge event, wrapping Forge IGeometryLoader
+         * instances into NeoForge IGeometryLoader type so both sides share the same map.
+         */
+        @SuppressWarnings("unchecked")
+        private static Map<ResourceLocation, IGeometryLoader<?>> extractForgeLoaders(
+                net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders forge) {
+            try {
+                Field f = forge.getClass().getDeclaredField("loaders");
+                f.setAccessible(true);
+                Map<ResourceLocation, ?> forgeMap = (Map<ResourceLocation, ?>) f.get(forge);
+                // The Forge map contains net.minecraftforge IGeometryLoader instances.
+                // NeoForge's IGeometryLoader has the same read() signature so a cast works
+                // at runtime because of type erasure.
+                return (Map<ResourceLocation, IGeometryLoader<?>>) (Map<?, ?>) forgeMap;
+            } catch (Throwable t) {
+                return new java.util.HashMap<>();
+            }
         }
 
         public void register(ResourceLocation key, IGeometryLoader<?> loader) {

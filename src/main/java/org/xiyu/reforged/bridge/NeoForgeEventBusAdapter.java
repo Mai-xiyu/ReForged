@@ -165,10 +165,13 @@ public final class NeoForgeEventBusAdapter {
             // Case 2 (fallback): The parameter type IS a Forge Event subclass with no
             // wrapper constructor → register directly. This handles cases where
             // NeoForge shims extend Event directly (e.g. stub events).
+            // We use the EXACT type as filter to avoid dispatching unrelated subtypes.
             if (Event.class.isAssignableFrom(neoType)) {
                 Class<? extends Event> eventType = (Class<? extends Event>) neoType;
                 Object invokeTarget = target instanceof Class<?> ? null : target;
+                Class<?> finalNeoType = neoType;
                 delegate.addListener(priority, receiveCancelled, eventType, event -> {
+                    if (!finalNeoType.isInstance(event)) return;
                     try { method.invoke(invokeTarget, event); }
                     catch (Throwable t) { LOGGER.error("[ReForged] NeoForge handler error: {}", method.getName(), t); }
                 });
@@ -279,10 +282,16 @@ public final class NeoForgeEventBusAdapter {
         }
 
         // Case 2: Direct Forge Event subclass — register directly on Forge bus
+        // Use instanceof guard to only dispatch exact type matches
         if (Event.class.isAssignableFrom(eventType)) {
+            Class<?> finalEventType2 = eventType;
+            Consumer<?> finalConsumer2 = consumer;
             try {
                 delegate.addListener(priority, receiveCancelled,
-                    (Class) eventType, (Consumer) consumer);
+                    (Class) eventType, (Consumer<Event>) event -> {
+                        if (!finalEventType2.isInstance(event)) return;
+                        ((Consumer<Object>) finalConsumer2).accept(event);
+                    });
                 LOGGER.info("[ReForged] Registered direct addListener for {}", eventType.getSimpleName());
             } catch (Throwable t) {
                 LOGGER.warn("[ReForged] Failed to register direct addListener for {}: {}",

@@ -34,7 +34,8 @@
         "LevelAttachmentMixin",
         "LevelNeoAttachmentMixin",
         "ServerLevelCapabilityMixin",
-        "ServerCommonPacketListenerImplMixin"
+        "ServerCommonPacketListenerImplMixin",
+        "JadeEntityAccessMixin"
     ],
     "client": [
         "ModListScreenMixin",

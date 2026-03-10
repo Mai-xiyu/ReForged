@@ -44,6 +44,10 @@ public class DeferredRegister<T> {
     private final String modid;
     private final ResourceKey<? extends Registry<T>> registryKey; // stored for key generation
     protected boolean isNoOp;
+    /** True when this DeferredRegister owns a custom registry built via makeRegistry(). */
+    private boolean customRegistry;
+    /** The custom MappedRegistry created by makeRegistry(), null otherwise. */
+    private Registry<T> customRegistryInstance;
 
     protected DeferredRegister(net.minecraftforge.registries.DeferredRegister<T> delegate,
                                String modid, boolean isNoOp, ResourceKey<? extends Registry<T>> registryKey) {
@@ -147,6 +151,23 @@ public class DeferredRegister<T> {
      */
     @SuppressWarnings("unchecked")
     public <I extends T> DeferredHolder<T, I> register(String name, Supplier<? extends I> sup) {
+        if (customRegistry && customRegistryInstance != null) {
+            // Custom registry mode: register directly into the MappedRegistry
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath(modid, name);
+            ResourceKey<T> entryKey = ResourceKey.create((ResourceKey<Registry<T>>) registryKey, id);
+            try {
+                // Unfreeze if needed, register, then optionally re-freeze
+                unfreezeRegistry(customRegistryInstance);
+                I value = sup.get();
+                Registry.register((Registry<T>) customRegistryInstance, id, value);
+                LOGGER.info("[ReForged] Registered '{}' into custom registry '{}'", id, registryKey.location());
+                return (DeferredHolder<T, I>) DeferredHolder.createDirect(entryKey, () -> value);
+            } catch (Throwable t) {
+                LOGGER.error("[ReForged] Failed to register '{}' into custom registry '{}': {}",
+                        id, registryKey.location(), t.getMessage());
+                return (DeferredHolder<T, I>) DeferredHolder.createDirect(entryKey, sup);
+            }
+        }
         if (isNoOp) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath(modid, name);
             LOGGER.debug("[ReForged] No-op register: {}", id);
@@ -176,8 +197,13 @@ public class DeferredRegister<T> {
     /**
      * Register this DeferredRegister to the given event bus.
      * In no-op mode, this is a safe no-op.
+     * In custom registry mode, this is also a no-op since entries are registered directly.
      */
     public void register(IEventBus bus) {
+        if (customRegistry) {
+            LOGGER.debug("[ReForged] Skipping DeferredRegister.register(bus) for custom registry mod '{}'", modid);
+            return;
+        }
         if (isNoOp) {
             LOGGER.debug("[ReForged] Skipping no-op DeferredRegister.register() for mod '{}'", modid);
             return;
@@ -224,10 +250,12 @@ public class DeferredRegister<T> {
      */
     @SuppressWarnings("unchecked")
     public Supplier<Registry<T>> makeRegistry(Supplier<RegistryBuilder<T>> builderSup) {
-        LOGGER.info("[ReForged] makeRegistry() called for mod '{}' — switching to no-op mode", modid);
-        this.isNoOp = true;
+        LOGGER.info("[ReForged] makeRegistry() called for mod '{}' — using custom registry mode", modid);
+        this.customRegistry = true;
+        this.isNoOp = false;
         RegistryBuilder<T> builder = builderSup.get();
         Registry<T> registry = builder.build();
+        this.customRegistryInstance = registry;
         return () -> registry;
     }
 
@@ -241,12 +269,41 @@ public class DeferredRegister<T> {
      */
     @SuppressWarnings("unchecked")
     public Registry<T> makeRegistry(Consumer<RegistryBuilder<T>> consumer) {
-        LOGGER.info("[ReForged] makeRegistry(Consumer) called for mod '{}' — switching to no-op mode", modid);
-        this.isNoOp = true;
+        LOGGER.info("[ReForged] makeRegistry(Consumer) called for mod '{}' — using custom registry mode", modid);
+        this.customRegistry = true;
+        this.isNoOp = false;
         RegistryBuilder<T> builder = new RegistryBuilder<>(registryKey);
         consumer.accept(builder);
         Registry<T> registry = builder.build();
+        this.customRegistryInstance = registry;
         return registry;
+    }
+
+    /**
+     * Unfreeze a MappedRegistry so entries can be registered into it.
+     * The registry may have been frozen by RegistryBuilder.build().
+     */
+    private static void unfreezeRegistry(Registry<?> registry) {
+        try {
+            java.lang.reflect.Field frozenField = null;
+            Class<?> clazz = registry.getClass();
+            while (clazz != null && clazz != Object.class) {
+                for (String name : new String[]{"frozen", "f_205845_"}) {
+                    try {
+                        frozenField = clazz.getDeclaredField(name);
+                        break;
+                    } catch (NoSuchFieldException ignored) {}
+                }
+                if (frozenField != null) break;
+                clazz = clazz.getSuperclass();
+            }
+            if (frozenField != null) {
+                frozenField.setAccessible(true);
+                frozenField.setBoolean(registry, false);
+            }
+        } catch (Throwable t) {
+            LOGGER.debug("[ReForged] Could not unfreeze registry: {}", t.getMessage());
+        }
     }
 
     /* ---------- Tag key creation ---------- */

@@ -58,6 +58,9 @@ public class ReForgedMixinPlugin implements IMixinConfigPlugin {
         if (mixinClassName.endsWith("FontJadePatchMixin")) {
             return jadePresent;
         }
+        if (mixinClassName.endsWith("JadeEntityAccessMixin")) {
+            return jadePresent;
+        }
         // Skip our BalmEntityMixin when Balm is present — Balm's own mixin already adds these methods
         if (mixinClassName.endsWith("BalmEntityMixin")) {
             return !balmPresent;
@@ -86,6 +89,14 @@ public class ReForgedMixinPlugin implements IMixinConfigPlugin {
             String jadeFontInternal = "snownee/jade/gui/JadeFont";
             if (!targetClass.interfaces.contains(jadeFontInternal)) {
                 targetClass.interfaces.add(jadeFontInternal);
+            }
+        }
+        // After JadeEntityAccessMixin adds callGetTypeName(),
+        // add EntityAccess interface to Entity's class node via ASM
+        if (mixinClassName.endsWith("JadeEntityAccessMixin") && jadePresent) {
+            String entityAccessInternal = "snownee/jade/mixin/EntityAccess";
+            if (!targetClass.interfaces.contains(entityAccessInternal)) {
+                targetClass.interfaces.add(entityAccessInternal);
             }
         }
     }
