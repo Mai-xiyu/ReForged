@@ -16,6 +16,11 @@ public class LootTableLoadEvent extends Event {
         this.table = table;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public LootTableLoadEvent(net.minecraftforge.event.LootTableLoadEvent delegate) {
+        this(delegate.getName(), delegate.getTable());
+    }
+
     public ResourceLocation getName() {
         return name;
     }

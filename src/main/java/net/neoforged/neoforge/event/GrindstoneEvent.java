@@ -23,6 +23,11 @@ public class GrindstoneEvent extends net.neoforged.bus.api.Event {
             this.xp = xp;
         }
 
+        /** Forge wrapper constructor for automatic event bridging */
+        public OnPlaceItem(net.minecraftforge.event.GrindstoneEvent.OnPlaceItem delegate) {
+            this(delegate.getTopItem(), delegate.getBottomItem(), delegate.getXp());
+        }
+
         public ItemStack getTopItem() { return topItem; }
         public ItemStack getBottomItem() { return bottomItem; }
         public ItemStack getOutput() { return output; }
@@ -47,6 +52,11 @@ public class GrindstoneEvent extends net.neoforged.bus.api.Event {
             this.topItem = topItem;
             this.bottomItem = bottomItem;
             this.xp = xp;
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public OnTakeItem(net.minecraftforge.event.GrindstoneEvent.OnTakeItem delegate) {
+            this(delegate.getTopItem(), delegate.getBottomItem(), delegate.getXp());
         }
 
         public ItemStack getTopItem() { return topItem; }

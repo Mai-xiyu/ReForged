@@ -44,6 +44,13 @@ public abstract class RenderLivingEvent<T extends LivingEntity, M extends Entity
                 float partialTick, PoseStack poseStack, MultiBufferSource multiBufferSource, int packedLight) {
             super(entity, renderer, partialTick, poseStack, multiBufferSource, packedLight);
         }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        @SuppressWarnings("rawtypes")
+        public Pre(net.minecraftforge.client.event.RenderLivingEvent.Pre forge) {
+            this(forge.getEntity(), forge.getRenderer(), forge.getPartialTick(),
+                    forge.getPoseStack(), forge.getMultiBufferSource(), forge.getPackedLight());
+        }
     }
 
     /** Fired after rendering. */
@@ -52,6 +59,13 @@ public abstract class RenderLivingEvent<T extends LivingEntity, M extends Entity
         public Post(LivingEntity entity, LivingEntityRenderer<?, ?> renderer,
                 float partialTick, PoseStack poseStack, MultiBufferSource multiBufferSource, int packedLight) {
             super(entity, renderer, partialTick, poseStack, multiBufferSource, packedLight);
+        }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        @SuppressWarnings("rawtypes")
+        public Post(net.minecraftforge.client.event.RenderLivingEvent.Post forge) {
+            this(forge.getEntity(), forge.getRenderer(), forge.getPartialTick(),
+                    forge.getPoseStack(), forge.getMultiBufferSource(), forge.getPackedLight());
         }
     }
 }

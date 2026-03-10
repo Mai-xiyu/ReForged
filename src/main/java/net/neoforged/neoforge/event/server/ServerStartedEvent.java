@@ -9,4 +9,9 @@ public class ServerStartedEvent extends ServerLifecycleEvent {
     public ServerStartedEvent(MinecraftServer server) {
         super(server);
     }
+
+    /** Forge wrapper constructor for automatic event bridging */
+    public ServerStartedEvent(net.minecraftforge.event.server.ServerStartedEvent delegate) {
+        this(delegate.getServer());
+    }
 }

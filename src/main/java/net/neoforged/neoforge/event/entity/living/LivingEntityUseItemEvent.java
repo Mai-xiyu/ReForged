@@ -25,17 +25,32 @@ public class LivingEntityUseItemEvent extends LivingEvent {
         public Start(LivingEntity entity, ItemStack item, int duration) {
             super(entity, item, duration);
         }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Start(net.minecraftforge.event.entity.living.LivingEntityUseItemEvent.Start delegate) {
+            this(delegate.getEntity(), delegate.getItem(), delegate.getDuration());
+        }
     }
 
     public static class Tick extends LivingEntityUseItemEvent {
         public Tick(LivingEntity entity, ItemStack item, int duration) {
             super(entity, item, duration);
         }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Tick(net.minecraftforge.event.entity.living.LivingEntityUseItemEvent.Tick delegate) {
+            this(delegate.getEntity(), delegate.getItem(), delegate.getDuration());
+        }
     }
 
     public static class Stop extends LivingEntityUseItemEvent {
         public Stop(LivingEntity entity, ItemStack item, int duration) {
             super(entity, item, duration);
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Stop(net.minecraftforge.event.entity.living.LivingEntityUseItemEvent.Stop delegate) {
+            this(delegate.getEntity(), delegate.getItem(), delegate.getDuration());
         }
     }
 
@@ -45,6 +60,11 @@ public class LivingEntityUseItemEvent extends LivingEvent {
         public Finish(LivingEntity entity, ItemStack item, int duration, ItemStack result) {
             super(entity, item, duration);
             this.result = result;
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Finish(net.minecraftforge.event.entity.living.LivingEntityUseItemEvent.Finish delegate) {
+            this(delegate.getEntity(), delegate.getItem(), delegate.getDuration(), delegate.getResultStack());
         }
 
         public ItemStack getResultStack() { return result; }

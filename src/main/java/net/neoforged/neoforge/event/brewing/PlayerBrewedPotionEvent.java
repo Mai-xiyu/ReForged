@@ -16,6 +16,11 @@ public class PlayerBrewedPotionEvent extends Event {
         this.stack = stack;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public PlayerBrewedPotionEvent(net.minecraftforge.event.brewing.PlayerBrewedPotionEvent delegate) {
+        this(delegate.getEntity(), delegate.getStack());
+    }
+
     public Player getPlayer() { return player; }
     public ItemStack getStack() { return stack; }
 }

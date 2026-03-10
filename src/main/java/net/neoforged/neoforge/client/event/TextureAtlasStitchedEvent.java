@@ -13,5 +13,15 @@ public class TextureAtlasStitchedEvent extends net.neoforged.bus.api.Event imple
         this.atlas = atlas;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging (maps from Forge TextureStitchEvent.Post). */
+    public TextureAtlasStitchedEvent(net.minecraftforge.client.event.TextureStitchEvent.Post forge) {
+        this(forge.getAtlas());
+    }
+
+    /** Wrapper constructor for EventBusAdapter bridging (maps from Forge TextureStitchEvent). */
+    public TextureAtlasStitchedEvent(net.minecraftforge.client.event.TextureStitchEvent forge) {
+        this(forge.getAtlas());
+    }
+
     public TextureAtlas getAtlas() { return atlas; }
 }

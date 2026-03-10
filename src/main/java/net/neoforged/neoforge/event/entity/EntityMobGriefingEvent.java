@@ -13,5 +13,10 @@ public class EntityMobGriefingEvent extends Event {
         this.entity = entity;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public EntityMobGriefingEvent(net.minecraftforge.event.entity.EntityMobGriefingEvent delegate) {
+        this(delegate.getEntity());
+    }
+
     public Entity getEntity() { return entity; }
 }

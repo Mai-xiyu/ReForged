@@ -36,6 +36,12 @@ public class RenderNameTagEvent extends EntityEvent {
 		this.partialTick = partialTick;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public RenderNameTagEvent(net.minecraftforge.client.event.RenderNameTagEvent forge) {
+        this(forge.getEntity(), forge.getContent(), forge.getEntityRenderer(),
+                forge.getPoseStack(), forge.getMultiBufferSource(), forge.getPackedLight(), forge.getPartialTick());
+    }
+
     public Component getContent() { return content; }
     public void setContent(Component content) { this.content = content; }
     public Component getOriginalContent() { return originalContent; }

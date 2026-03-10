@@ -19,6 +19,11 @@ public class LivingDestroyBlockEvent extends LivingEvent implements ICancellable
         this.state = state;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public LivingDestroyBlockEvent(net.minecraftforge.event.entity.living.LivingDestroyBlockEvent delegate) {
+        this(delegate.getEntity(), delegate.getPos(), delegate.getState());
+    }
+
     public BlockState getState() { return state; }
     public BlockPos getPos() { return pos; }
 }

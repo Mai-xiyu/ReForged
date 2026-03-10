@@ -15,6 +15,11 @@ public class SleepFinishedTimeEvent extends Event {
         this.newTime = newTime;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public SleepFinishedTimeEvent(net.minecraftforge.event.level.SleepFinishedTimeEvent delegate) {
+        this((ServerLevel) delegate.getLevel(), delegate.getNewTime());
+    }
+
     public ServerLevel getLevel() { return level; }
     public long getNewTime() { return newTime; }
     public void setTimeAddition(long newTime) { this.newTime = newTime; }

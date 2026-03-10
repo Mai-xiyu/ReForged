@@ -17,6 +17,11 @@ public class AttackEntityEvent extends Event implements ICancellableEvent {
         this.target = target;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public AttackEntityEvent(net.minecraftforge.event.entity.player.AttackEntityEvent delegate) {
+        this(delegate.getEntity(), delegate.getTarget());
+    }
+
     public Player getEntity() { return player; }
     public Entity getTarget() { return target; }
 }

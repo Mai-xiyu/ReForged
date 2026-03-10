@@ -21,6 +21,11 @@ public class LivingEquipmentChangeEvent extends Event {
         this.to = to;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public LivingEquipmentChangeEvent(net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent delegate) {
+        this(delegate.getEntity(), delegate.getSlot(), delegate.getFrom(), delegate.getTo());
+    }
+
     public LivingEntity getEntity() { return entity; }
     public EquipmentSlot getSlot() { return slot; }
     public ItemStack getFrom() { return from; }

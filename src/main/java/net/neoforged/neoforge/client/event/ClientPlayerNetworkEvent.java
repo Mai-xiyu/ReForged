@@ -35,6 +35,11 @@ public abstract class ClientPlayerNetworkEvent extends net.neoforged.bus.api.Eve
         public LoggingIn(MultiPlayerGameMode multiPlayerGameMode, LocalPlayer player, Connection connection) {
             super(multiPlayerGameMode, player, connection);
         }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public LoggingIn(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingIn forge) {
+            this(forge.getMultiPlayerGameMode(), forge.getPlayer(), forge.getConnection());
+        }
     }
 
     /** Fired when the client player logs out. All fields may be null. */
@@ -42,6 +47,11 @@ public abstract class ClientPlayerNetworkEvent extends net.neoforged.bus.api.Eve
         public LoggingOut(@Nullable MultiPlayerGameMode multiPlayerGameMode,
                 @Nullable LocalPlayer player, @Nullable Connection connection) {
             super(multiPlayerGameMode, player, connection);
+        }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public LoggingOut(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut forge) {
+            this(forge.getMultiPlayerGameMode(), forge.getPlayer(), forge.getConnection());
         }
     }
 
@@ -53,6 +63,11 @@ public abstract class ClientPlayerNetworkEvent extends net.neoforged.bus.api.Eve
                 LocalPlayer newPlayer, Connection connection) {
             super(multiPlayerGameMode, newPlayer, connection);
             this.oldPlayer = oldPlayer;
+        }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public Clone(net.minecraftforge.client.event.ClientPlayerNetworkEvent.Clone forge) {
+            this(forge.getMultiPlayerGameMode(), forge.getOldPlayer(), forge.getNewPlayer(), forge.getConnection());
         }
 
         public LocalPlayer getOldPlayer() { return oldPlayer; }

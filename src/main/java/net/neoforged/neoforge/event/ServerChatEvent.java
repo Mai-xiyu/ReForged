@@ -18,6 +18,11 @@ public class ServerChatEvent extends net.neoforged.bus.api.Event {
         this.message = message;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public ServerChatEvent(net.minecraftforge.event.ServerChatEvent delegate) {
+        this(delegate.getPlayer(), delegate.getRawText(), delegate.getMessage());
+    }
+
     /** The player who sent the message. */
     public ServerPlayer getPlayer() { return player; }
     /** The raw text of the message as typed. */

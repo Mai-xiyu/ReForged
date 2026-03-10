@@ -23,6 +23,11 @@ public class ClientChatReceivedEvent extends net.neoforged.bus.api.Event impleme
         this.sender = sender;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public ClientChatReceivedEvent(net.minecraftforge.client.event.ClientChatReceivedEvent forge) {
+        this(forge.getBoundChatType(), forge.getMessage(), forge.getSender());
+    }
+
     public Component getMessage() { return message; }
     public void setMessage(Component message) { this.message = message; }
     @Nullable public ChatType.Bound getBoundChatType() { return boundChatType; }
@@ -41,6 +46,11 @@ public class ClientChatReceivedEvent extends net.neoforged.bus.api.Event impleme
 			this.overlay = overlay;
 		}
 
+		/** Wrapper constructor for EventBusAdapter bridging. */
+		public System(net.minecraftforge.client.event.ClientChatReceivedEvent.System forge) {
+			this(forge.getMessage(), forge.isOverlay());
+		}
+
 		public boolean isOverlay() { return overlay; }
     }
 
@@ -54,6 +64,11 @@ public class ClientChatReceivedEvent extends net.neoforged.bus.api.Event impleme
 		public Player(@Nullable ChatType.Bound boundChatType, Component message, @Nullable PlayerChatMessage playerChatMessage, UUID sender) {
 			super(boundChatType, message, sender);
 			this.playerChatMessage = playerChatMessage;
+		}
+
+		/** Wrapper constructor for EventBusAdapter bridging. */
+		public Player(net.minecraftforge.client.event.ClientChatReceivedEvent.Player forge) {
+			this(forge.getBoundChatType(), forge.getMessage(), forge.getPlayerChatMessage(), forge.getSender());
 		}
 
 		@Nullable

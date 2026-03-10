@@ -21,6 +21,11 @@ public class AnvilUpdateEvent extends net.neoforged.bus.api.Event {
         this.cost = cost;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public AnvilUpdateEvent(net.minecraftforge.event.AnvilUpdateEvent delegate) {
+        this(delegate.getLeft(), delegate.getRight(), delegate.getName(), (int) delegate.getCost());
+    }
+
     /** The left input (item being modified). */
     public ItemStack getLeft() { return left; }
     /** The right input (modifier item). */

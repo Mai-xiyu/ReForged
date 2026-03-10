@@ -12,5 +12,10 @@ public class PlayerDestroyItemEvent extends PlayerEvent {
         this.original = original;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public PlayerDestroyItemEvent(net.minecraftforge.event.entity.player.PlayerDestroyItemEvent delegate) {
+        this(delegate.getEntity(), delegate.getOriginal());
+    }
+
     public ItemStack getOriginal() { return original; }
 }

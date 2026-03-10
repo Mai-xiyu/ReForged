@@ -24,12 +24,22 @@ public abstract class ChunkEvent extends LevelEvent {
             this.newChunk = newChunk;
         }
 
+        /** Forge wrapper constructor for automatic event bridging */
+        public Load(net.minecraftforge.event.level.ChunkEvent.Load delegate) {
+            this(delegate.getChunk(), delegate.getLevel(), delegate.isNewChunk());
+        }
+
         public boolean isNewChunk() { return newChunk; }
     }
 
     public static class Unload extends ChunkEvent {
         public Unload(ChunkAccess chunk, LevelAccessor level) {
             super(chunk, level);
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Unload(net.minecraftforge.event.level.ChunkEvent.Unload delegate) {
+            this(delegate.getChunk(), delegate.getLevel());
         }
     }
 }

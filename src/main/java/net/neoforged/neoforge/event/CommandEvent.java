@@ -17,6 +17,11 @@ public class CommandEvent extends Event {
         this.parse = parse;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public CommandEvent(net.minecraftforge.event.CommandEvent delegate) {
+        this(delegate.getParseResults());
+    }
+
     public ParseResults<CommandSourceStack> getParseResults() {
         return parse;
     }

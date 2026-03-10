@@ -19,6 +19,11 @@ public class VillageSiegeEvent extends Event {
         this.player = player;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public VillageSiegeEvent(net.minecraftforge.event.village.VillageSiegeEvent delegate) {
+        this((ServerLevel) delegate.getLevel(), delegate.getPlayer());
+    }
+
     public ServerLevel getLevel() { return level; }
     @Nullable
     public Player getPlayer() { return player; }

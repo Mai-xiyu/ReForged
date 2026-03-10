@@ -27,6 +27,11 @@ public abstract class CropGrowEvent extends Event {
         public Pre(Level level, BlockPos pos, BlockState state) {
             super(level, pos, state);
         }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Pre(net.minecraftforge.event.level.BlockEvent.CropGrowEvent.Pre delegate) {
+            this((Level) delegate.getLevel(), delegate.getPos(), delegate.getState());
+        }
     }
 
     public static class Post extends CropGrowEvent {
@@ -35,6 +40,11 @@ public abstract class CropGrowEvent extends Event {
         public Post(Level level, BlockPos pos, BlockState state, BlockState originalState) {
             super(level, pos, state);
             this.originalState = originalState;
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Post(net.minecraftforge.event.level.BlockEvent.CropGrowEvent.Post delegate) {
+            this((Level) delegate.getLevel(), delegate.getPos(), delegate.getState(), delegate.getOriginalState());
         }
 
         public BlockState getOriginalState() { return originalState; }

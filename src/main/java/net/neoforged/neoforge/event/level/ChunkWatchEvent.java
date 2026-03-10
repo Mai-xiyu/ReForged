@@ -32,6 +32,11 @@ public abstract class ChunkWatchEvent extends Event {
             this.chunk = chunk;
         }
 
+        /** Forge wrapper constructor for automatic event bridging */
+        public Watch(net.minecraftforge.event.level.ChunkWatchEvent.Watch delegate) {
+            this(delegate.getPlayer(), delegate.getChunk(), delegate.getLevel());
+        }
+
         public LevelChunk getChunk() { return chunk; }
     }
 
@@ -49,6 +54,11 @@ public abstract class ChunkWatchEvent extends Event {
     public static class UnWatch extends ChunkWatchEvent {
         public UnWatch(ServerPlayer player, ChunkPos pos, ServerLevel level) {
             super(player, pos, level);
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public UnWatch(net.minecraftforge.event.level.ChunkWatchEvent.UnWatch delegate) {
+            this(delegate.getPlayer(), delegate.getPos(), delegate.getLevel());
         }
     }
 }

@@ -14,5 +14,10 @@ public class EnderManAngerEvent extends LivingEvent {
         this.player = player;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public EnderManAngerEvent(net.minecraftforge.event.entity.living.EnderManAngerEvent delegate) {
+        this((EnderMan) delegate.getEntity(), delegate.getPlayer());
+    }
+
     public Player getPlayer() { return player; }
 }

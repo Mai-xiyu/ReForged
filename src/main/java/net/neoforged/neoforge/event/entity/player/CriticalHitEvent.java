@@ -20,6 +20,11 @@ public class CriticalHitEvent extends PlayerEvent {
         this.isCriticalHit = this.isVanillaCritical = isCriticalHit;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public CriticalHitEvent(net.minecraftforge.event.entity.player.CriticalHitEvent delegate) {
+        this(delegate.getEntity(), delegate.getTarget(), delegate.getDamageModifier(), delegate.isVanillaCritical());
+    }
+
     public Entity getTarget() { return target; }
     public float getDamageMultiplier() { return dmgMultiplier; }
     public void setDamageMultiplier(float dmgMultiplier) { this.dmgMultiplier = dmgMultiplier; }

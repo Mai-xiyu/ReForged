@@ -20,11 +20,21 @@ public class PlayerContainerEvent extends PlayerEvent {
         public Open(Player player, AbstractContainerMenu container) {
             super(player, container);
         }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Open(net.minecraftforge.event.entity.player.PlayerContainerEvent.Open delegate) {
+            this(delegate.getEntity(), delegate.getContainer());
+        }
     }
 
     public static class Close extends PlayerContainerEvent {
         public Close(Player player, AbstractContainerMenu container) {
             super(player, container);
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Close(net.minecraftforge.event.entity.player.PlayerContainerEvent.Close delegate) {
+            this(delegate.getEntity(), delegate.getContainer());
         }
     }
 }

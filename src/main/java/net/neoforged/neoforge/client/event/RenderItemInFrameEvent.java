@@ -30,6 +30,12 @@ public class RenderItemInFrameEvent extends Event implements ICancellableEvent {
         this.packedLight = packedLight;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public RenderItemInFrameEvent(net.minecraftforge.client.event.RenderItemInFrameEvent forge) {
+        this(forge.getItemFrameEntity(), forge.getRenderer(), forge.getPoseStack(),
+                forge.getMultiBufferSource(), forge.getPackedLight());
+    }
+
     public ItemStack getItemStack() { return itemStack; }
     public ItemFrame getItemFrameEntity() { return itemFrameEntity; }
     public ItemFrameRenderer<?> getRenderer() { return renderer; }

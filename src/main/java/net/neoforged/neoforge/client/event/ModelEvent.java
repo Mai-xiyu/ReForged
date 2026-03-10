@@ -40,6 +40,11 @@ public abstract class ModelEvent extends Event {
             this.modelBakery = modelBakery;
         }
 
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public ModifyBakingResult(net.minecraftforge.client.event.ModelEvent.ModifyBakingResult forge) {
+            this(forge.getModels(), null, forge.getModelBakery());
+        }
+
         public Map<ModelResourceLocation, BakedModel> getModels() { return models; }
         public Function<Material, TextureAtlasSprite> getTextureGetter() { return textureGetter; }
         public ModelBakery getModelBakery() { return modelBakery; }
@@ -61,6 +66,11 @@ public abstract class ModelEvent extends Event {
             this.modelBakery = modelBakery;
         }
 
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public BakingCompleted(net.minecraftforge.client.event.ModelEvent.BakingCompleted forge) {
+            this(forge.getModelManager(), forge.getModels(), forge.getModelBakery());
+        }
+
         public ModelManager getModelManager() { return modelManager; }
         public Map<ModelResourceLocation, BakedModel> getModels() { return models; }
         public ModelBakery getModelBakery() { return modelBakery; }
@@ -74,6 +84,11 @@ public abstract class ModelEvent extends Event {
 
         public RegisterAdditional(Set<ModelResourceLocation> models) {
             this.models = models;
+        }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public RegisterAdditional(net.minecraftforge.client.event.ModelEvent.RegisterAdditional forge) {
+            this(new java.util.HashSet<>());
         }
 
         public void register(ModelResourceLocation model) {
@@ -92,6 +107,11 @@ public abstract class ModelEvent extends Event {
 
         public RegisterGeometryLoaders(Map<ResourceLocation, IGeometryLoader<?>> loaders) {
             this.loaders = loaders;
+        }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public RegisterGeometryLoaders(net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders forge) {
+            this(new java.util.HashMap<>());
         }
 
         public void register(ResourceLocation key, IGeometryLoader<?> loader) {

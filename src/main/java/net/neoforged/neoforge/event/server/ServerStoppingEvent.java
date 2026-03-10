@@ -13,5 +13,10 @@ public class ServerStoppingEvent extends Event {
         this.server = server;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public ServerStoppingEvent(net.minecraftforge.event.server.ServerStoppingEvent delegate) {
+        this(delegate.getServer());
+    }
+
     public MinecraftServer getServer() { return server; }
 }

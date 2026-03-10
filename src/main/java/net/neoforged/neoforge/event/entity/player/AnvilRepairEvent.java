@@ -20,6 +20,11 @@ public class AnvilRepairEvent extends PlayerEvent {
         this.breakChance = 0.12f;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public AnvilRepairEvent(net.minecraftforge.event.entity.player.AnvilRepairEvent delegate) {
+        this(delegate.getEntity(), delegate.getLeft(), delegate.getRight(), delegate.getOutput());
+    }
+
     public ItemStack getOutput() { return output; }
     public ItemStack getLeft() { return left; }
     public ItemStack getRight() { return right; }

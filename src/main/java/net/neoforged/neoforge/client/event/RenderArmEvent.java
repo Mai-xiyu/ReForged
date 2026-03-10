@@ -24,6 +24,11 @@ public class RenderArmEvent extends net.neoforged.bus.api.Event implements net.n
         this.arm = arm;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public RenderArmEvent(net.minecraftforge.client.event.RenderArmEvent forge) {
+        this(forge.getPoseStack(), forge.getMultiBufferSource(), forge.getPackedLight(), forge.getPlayer(), forge.getArm());
+    }
+
     public PoseStack getPoseStack() { return poseStack; }
     public MultiBufferSource getMultiBufferSource() { return multiBufferSource; }
     public int getPackedLight() { return packedLight; }

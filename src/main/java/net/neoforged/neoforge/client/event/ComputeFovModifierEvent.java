@@ -18,6 +18,11 @@ public class ComputeFovModifierEvent extends net.neoforged.bus.api.Event {
         this.newFovModifier = (float) Mth.lerp(Minecraft.getInstance().options.fovEffectScale().get(), 1.0F, fovModifier);
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public ComputeFovModifierEvent(net.minecraftforge.client.event.ComputeFovModifierEvent forge) {
+        this(forge.getPlayer(), forge.getFovModifier());
+    }
+
     public Player getPlayer() { return player; }
     public float getFovModifier() { return fovModifier; }
     public float getNewFovModifier() { return newFovModifier; }

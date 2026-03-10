@@ -16,9 +16,19 @@ public class ClientPauseChangeEvent extends Event {
 
     public static class Pre extends ClientPauseChangeEvent {
         public Pre(boolean paused) { super(paused); }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public Pre(net.minecraftforge.client.event.ClientPauseChangeEvent.Pre forge) {
+            this(forge.isPaused());
+        }
     }
 
     public static class Post extends ClientPauseChangeEvent {
         public Post(boolean paused) { super(paused); }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public Post(net.minecraftforge.client.event.ClientPauseChangeEvent.Post forge) {
+            this(forge.isPaused());
+        }
     }
 }

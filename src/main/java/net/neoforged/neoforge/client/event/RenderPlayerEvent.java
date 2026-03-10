@@ -38,6 +38,12 @@ public abstract class RenderPlayerEvent extends PlayerEvent {
                 PoseStack poseStack, MultiBufferSource multiBufferSource, int packedLight) {
             super(player, renderer, partialTick, poseStack, multiBufferSource, packedLight);
         }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public Pre(net.minecraftforge.client.event.RenderPlayerEvent.Pre forge) {
+            this((Player) forge.getEntity(), forge.getRenderer(), forge.getPartialTick(),
+                    forge.getPoseStack(), forge.getMultiBufferSource(), forge.getPackedLight());
+        }
     }
 
     /** Fired after rendering. */
@@ -45,6 +51,12 @@ public abstract class RenderPlayerEvent extends PlayerEvent {
         public Post(Player player, PlayerRenderer renderer, float partialTick,
                 PoseStack poseStack, MultiBufferSource multiBufferSource, int packedLight) {
             super(player, renderer, partialTick, poseStack, multiBufferSource, packedLight);
+        }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public Post(net.minecraftforge.client.event.RenderPlayerEvent.Post forge) {
+            this((Player) forge.getEntity(), forge.getRenderer(), forge.getPartialTick(),
+                    forge.getPoseStack(), forge.getMultiBufferSource(), forge.getPackedLight());
         }
     }
 }

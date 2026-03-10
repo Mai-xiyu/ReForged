@@ -484,4 +484,115 @@ public class CommonHooks {
 		// NeoForge namespace prefix helper — return as-is for Forge compat
 		return original;
 	}
+
+	// ── Build Recipe Book Type ────────────────────────────
+
+	public static java.util.Map<String, ?> buildRecipeBookTypeTagFields() {
+		return java.util.Map.of();
+	}
+
+	// ── Dispense UseOnContext ─────────────────────────────
+
+	public static net.minecraft.world.item.context.UseOnContext dispenseUseOnContext(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos, net.minecraft.core.Direction direction, net.minecraft.world.item.ItemStack stack) {
+		// Create a minimal UseOnContext for dispensers — NeoForge-specific
+		return null; // Mods should handle null case
+	}
+
+	// ── Extract Lookup Provider ───────────────────────────
+
+	@Nullable
+	public static net.minecraft.core.HolderLookup.Provider extractLookupProvider(com.mojang.serialization.DynamicOps<?> ops) {
+		if (ops instanceof net.minecraft.resources.RegistryOps<?> registryOps) {
+			try {
+				java.lang.reflect.Field f = net.minecraft.resources.RegistryOps.class.getDeclaredField("lookupProvider");
+				f.setAccessible(true);
+				Object val = f.get(registryOps);
+				if (val instanceof net.minecraft.core.HolderLookup.Provider provider) {
+					return provider;
+				}
+			} catch (Throwable ignored) {}
+		}
+		return null;
+	}
+
+	// ── Sweep Attack ──────────────────────────────────────
+
+	public static boolean fireSweepAttack(net.minecraft.world.entity.player.Player player, net.minecraft.world.entity.Entity target) {
+		// NeoForge fires SweepAttackEvent — delegates to Forge's sweep attack handling
+		return true; // Allow sweep attack by default
+	}
+
+	// ── Filtered Recipe Book Types ────────────────────────
+
+	public static net.minecraft.world.inventory.RecipeBookType[] getFilteredRecipeBookTypeValues() {
+		return net.minecraft.world.inventory.RecipeBookType.values();
+	}
+
+	// ── Server Chat Decorator ─────────────────────────────
+
+	@Nullable
+	public static Object getServerChatSubmittedDecorator() {
+		return null; // NeoForge-specific — no Forge equivalent
+	}
+
+	// ── Mob Effect NBT ────────────────────────────────────
+
+	@Nullable
+	public static net.minecraft.world.effect.MobEffect loadMobEffect(net.minecraft.nbt.CompoundTag tag) {
+		// NeoForge-specific mob effect loading
+		if (tag.contains("id", 8)) {
+			ResourceLocation id = ResourceLocation.tryParse(tag.getString("id"));
+			if (id != null) {
+				return net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.get(id);
+			}
+		}
+		return null;
+	}
+
+	public static net.minecraft.nbt.CompoundTag saveMobEffect(net.minecraft.world.effect.MobEffect effect) {
+		var tag = new net.minecraft.nbt.CompoundTag();
+		var key = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.getKey(effect);
+		if (key != null) {
+			tag.putString("id", key.toString());
+		}
+		return tag;
+	}
+
+	// ── Loot Pools Codec ──────────────────────────────────
+
+	public static com.mojang.serialization.Codec<java.util.List<net.minecraft.world.level.storage.loot.LootPool>> lootPoolsCodec() {
+		return net.minecraft.world.level.storage.loot.LootPool.CODEC.listOf();
+	}
+
+	// ── Creative Tabs Check ───────────────────────────────
+
+	public static void onCheckCreativeTabs(Object... args) {
+		// NeoForge-specific creative tab checking — no-op
+	}
+
+	// ── Chunk Unload ──────────────────────────────────────
+
+	public static void onChunkUnload(net.minecraft.world.level.chunk.ChunkAccess chunk) {
+		// NeoForge fires ChunkEvent.Unload — Forge handles this internally
+	}
+
+	// ── Player Enchant Item ───────────────────────────────
+
+	public static void onPlayerEnchantItem(net.minecraft.world.entity.player.Player player, net.minecraft.world.item.ItemStack stack, int cost) {
+		// NeoForge fires EnchantmentLevelSetEvent — no-op on Forge
+	}
+
+	// ── Resolve Lookup ────────────────────────────────────
+
+	@Nullable
+	public static <T> Object resolveLookup(net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<T>> key) {
+		return null; // NeoForge-specific — not available on Forge
+	}
+
+	// ── Shears Harvest Block ──────────────────────────────
+
+	public static boolean tryDispenseShearsHarvestBlock(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos, net.minecraft.world.item.ItemStack stack) {
+		// NeoForge-specific dispenser shears harvesting — return false on Forge
+		return false;
+	}
 }

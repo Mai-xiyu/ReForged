@@ -21,6 +21,11 @@ public class PlaySoundEvent extends SoundEvent {
         this.sound = sound;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public PlaySoundEvent(net.minecraftforge.client.event.sound.PlaySoundEvent forge) {
+        this(forge.getEngine(), forge.getOriginalSound());
+    }
+
     public String getName() { return name; }
     public SoundInstance getOriginalSound() { return originalSound; }
     @Nullable

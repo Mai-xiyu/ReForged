@@ -16,6 +16,11 @@ public class LivingGetProjectileEvent extends LivingEvent {
         this.projectileItemStack = projectileItemStack;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public LivingGetProjectileEvent(net.minecraftforge.event.entity.living.LivingGetProjectileEvent delegate) {
+        this(delegate.getEntity(), delegate.getProjectileWeaponItemStack(), delegate.getProjectileItemStack());
+    }
+
     public ItemStack getProjectileWeaponItemStack() { return projectileWeaponItemStack; }
     public ItemStack getProjectileItemStack() { return projectileItemStack; }
     public void setProjectileItemStack(ItemStack projectile) { this.projectileItemStack = projectile; }

@@ -28,6 +28,11 @@ public class ScreenshotEvent extends Event implements ICancellableEvent {
         } catch (IOException ignored) {}
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public ScreenshotEvent(net.minecraftforge.client.event.ScreenshotEvent forge) {
+        this(forge.getImage(), forge.getScreenshotFile());
+    }
+
     public NativeImage getImage() { return image; }
     public File getScreenshotFile() { return screenshotFile; }
     public void setScreenshotFile(File screenshotFile) { this.screenshotFile = screenshotFile; }

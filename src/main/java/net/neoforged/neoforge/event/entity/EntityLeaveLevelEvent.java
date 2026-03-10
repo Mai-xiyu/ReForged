@@ -16,6 +16,11 @@ public class EntityLeaveLevelEvent extends Event {
         this.level = level;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public EntityLeaveLevelEvent(net.minecraftforge.event.entity.EntityLeaveLevelEvent delegate) {
+        this(delegate.getEntity(), delegate.getLevel());
+    }
+
     public Entity getEntity() { return entity; }
     public Level getLevel() { return level; }
 }

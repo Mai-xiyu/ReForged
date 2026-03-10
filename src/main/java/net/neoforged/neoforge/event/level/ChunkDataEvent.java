@@ -24,6 +24,11 @@ public abstract class ChunkDataEvent extends Event {
             this.data = data;
         }
 
+        /** Forge wrapper constructor for automatic event bridging */
+        public Load(net.minecraftforge.event.level.ChunkDataEvent.Load delegate) {
+            this(delegate.getChunk(), delegate.getData());
+        }
+
         public CompoundTag getData() { return data; }
     }
 
@@ -33,6 +38,11 @@ public abstract class ChunkDataEvent extends Event {
         public Save(ChunkAccess chunk, CompoundTag data) {
             super(chunk);
             this.data = data;
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public Save(net.minecraftforge.event.level.ChunkDataEvent.Save delegate) {
+            this(delegate.getChunk(), delegate.getData());
         }
 
         public CompoundTag getData() { return data; }

@@ -16,6 +16,11 @@ public class AnimalTameEvent extends LivingEvent {
         this.tamer = tamer;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public AnimalTameEvent(net.minecraftforge.event.entity.living.AnimalTameEvent delegate) {
+        this(delegate.getAnimal(), delegate.getTamer());
+    }
+
     public Animal getAnimal() { return animal; }
     public Player getTamer() { return tamer; }
 }

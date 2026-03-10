@@ -39,6 +39,12 @@ public abstract class ViewportEvent extends net.neoforged.bus.api.Event {
             this.roll = roll;
         }
 
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public ComputeCameraAngles(net.minecraftforge.client.event.ViewportEvent.ComputeCameraAngles forge) {
+            this(forge.getRenderer(), forge.getCamera(), forge.getPartialTick(),
+                    forge.getYaw(), forge.getPitch(), forge.getRoll());
+        }
+
         public float getYaw() { return yaw; }
         public void setYaw(float yaw) { this.yaw = yaw; }
         public float getPitch() { return pitch; }
@@ -64,6 +70,13 @@ public abstract class ViewportEvent extends net.neoforged.bus.api.Event {
             this.farPlaneDistance = farPlaneDistance;
             this.nearPlaneDistance = nearPlaneDistance;
             this.fogShape = fogShape;
+        }
+
+        /** Wrapper constructor for EventBusAdapter bridging. */
+        public RenderFog(net.minecraftforge.client.event.ViewportEvent.RenderFog forge) {
+            this(forge.getMode(), forge.getType(), forge.getCamera(), (float) forge.getPartialTick(),
+                    forge.getNearPlaneDistance(), forge.getFarPlaneDistance(), forge.getFogShape(),
+                    forge.getRenderer());
         }
 
         public FogRenderer.FogMode getMode() { return mode; }

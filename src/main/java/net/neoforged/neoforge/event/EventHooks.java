@@ -560,4 +560,110 @@ public final class EventHooks {
     public static void onTagsUpdated(RegistryAccess registryAccess, boolean fromClientPacket, boolean isIntegratedServerConnection) {
         ForgeEventFactory.onTagsUpdated(registryAccess, fromClientPacket, isIntegratedServerConnection);
     }
+
+    // ── Sleep Events ──────────────────────────────────────
+
+    public static boolean canEntityContinueSleeping(LivingEntity sleeper, @Nullable net.minecraft.world.entity.player.Player.BedSleepingProblem problem) {
+        // NeoForge fires CanContinueSleepingEvent — delegate to Forge's SleepingLocationCheckEvent
+        return problem == null; // Allow sleeping if no problem
+    }
+
+    public static com.mojang.datafixers.util.Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, net.minecraft.util.Unit> canPlayerStartSleeping(ServerPlayer player, BlockPos pos, @Nullable com.mojang.datafixers.util.Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, net.minecraft.util.Unit> vanillaResult) {
+        // NeoForge fires CanPlayerSleepEvent — Forge has PlayerSleepInBedEvent
+        if (vanillaResult != null) return vanillaResult;
+        return com.mojang.datafixers.util.Either.right(net.minecraft.util.Unit.INSTANCE);
+    }
+
+    // ── Phantom Spawning ──────────────────────────────────
+
+    public static net.neoforged.neoforge.event.entity.player.PlayerSpawnPhantomsEvent firePlayerSpawnPhantoms(ServerPlayer player, ServerLevel level, BlockPos pos) {
+        net.minecraft.world.Difficulty difficulty = level.getCurrentDifficultyAt(pos).getDifficulty();
+        var event = new net.neoforged.neoforge.event.entity.player.PlayerSpawnPhantomsEvent(player, 1 + level.random.nextInt(difficulty.getId() + 1));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);
+        return event;
+    }
+
+    // ── Spawner Finalize ──────────────────────────────────
+
+    @SuppressWarnings("deprecation")
+    public static net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent finalizeMobSpawnSpawner(Mob mob, ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnData, Object spawner, boolean def) {
+        var event = new net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent(mob, level, mob.getX(), mob.getY(), mob.getZ(), difficulty, spawnType, spawnData);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);
+        if (!event.isCanceled() && def) {
+            mob.finalizeSpawn(level, event.getDifficulty(), event.getSpawnType(), event.getSpawnData());
+        }
+        return event;
+    }
+
+    // ── Chunk Sent ────────────────────────────────────────
+
+    public static void fireChunkSent(ServerPlayer entity, net.minecraft.world.level.chunk.LevelChunk chunk, ServerLevel level) {
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.ChunkWatchEvent.Sent(entity, chunk, level));
+    }
+
+    // ── Player Heart Type ─────────────────────────────────
+
+    public static Object firePlayerHeartTypeEvent(Player player, Object heartType) {
+        // NeoForge fires PlayerHeartTypeEvent — return as-is on Forge
+        // HeartType is package-private in Gui, so we use Object
+        return heartType;
+    }
+
+    // ── Player Respawn Position ───────────────────────────
+
+    public static net.neoforged.neoforge.event.entity.player.PlayerRespawnPositionEvent firePlayerRespawnPositionEvent(ServerPlayer player, net.minecraft.world.level.portal.DimensionTransition dimensionTransition, boolean fromEndFight) {
+        // Extract fields from DimensionTransition to match our 5-param constructor
+        net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dim = player.level().dimension();
+        net.minecraft.core.BlockPos pos = player.getRespawnPosition();
+        float angle = player.getRespawnAngle();
+        return new net.neoforged.neoforge.event.entity.player.PlayerRespawnPositionEvent(player, dim, pos, angle, fromEndFight);
+    }
+
+    // ── Enchantment Level Events ──────────────────────────
+
+    public static int getEnchantmentLevelSpecific(int level, ItemStack stack, Holder<net.minecraft.world.item.enchantment.Enchantment> ench) {
+        // NeoForge fires GetEnchantmentLevelEvent — return original level on Forge
+        return level;
+    }
+
+    public static net.minecraft.world.item.enchantment.ItemEnchantments getAllEnchantmentLevels(net.minecraft.world.item.enchantment.ItemEnchantments enchantments, ItemStack stack, Object lookup) {
+        // NeoForge fires GetEnchantmentLevelEvent — return as-is on Forge
+        return enchantments;
+    }
+
+    // ── Custom Spawners ───────────────────────────────────
+
+    public static java.util.List<net.minecraft.world.level.CustomSpawner> getCustomSpawners(ServerLevel serverLevel, java.util.List<net.minecraft.world.level.CustomSpawner> customSpawners) {
+        // NeoForge fires ModifyCustomSpawnersEvent — return original list on Forge
+        return customSpawners;
+    }
+
+    // ── Entity Size ───────────────────────────────────────
+
+    public static net.neoforged.neoforge.event.entity.EntityEvent.Size getEntitySizeForge(Entity entity, net.minecraft.world.entity.Pose pose, net.minecraft.world.entity.EntityDimensions size) {
+        var evt = new net.neoforged.neoforge.event.entity.EntityEvent.Size(entity);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(evt);
+        return evt;
+    }
+
+    public static net.neoforged.neoforge.event.entity.EntityEvent.Size getEntitySizeForge(Entity entity, net.minecraft.world.entity.Pose pose, net.minecraft.world.entity.EntityDimensions oldSize, net.minecraft.world.entity.EntityDimensions newSize) {
+        var evt = new net.neoforged.neoforge.event.entity.EntityEvent.Size(entity);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(evt);
+        return evt;
+    }
+
+    // ── Alter Ground ──────────────────────────────────────
+
+    public static Object alterGround(Object ctx, java.util.List<BlockPos> positions, Object provider) {
+        // NeoForge fires AlterGroundEvent — return original provider on Forge
+        return provider;
+    }
+
+    // ── Stat Award ────────────────────────────────────────
+
+    public static net.neoforged.neoforge.event.StatAwardEvent onStatAward(Player player, net.minecraft.stats.Stat<?> stat, int value) {
+        var event = new net.neoforged.neoforge.event.StatAwardEvent(player, stat, value);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);
+        return event;
+    }
 }

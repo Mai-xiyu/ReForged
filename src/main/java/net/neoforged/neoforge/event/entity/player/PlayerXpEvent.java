@@ -19,6 +19,11 @@ public abstract class PlayerXpEvent extends PlayerEvent {
             this.orb = orb;
         }
 
+        /** Forge wrapper constructor for automatic event bridging */
+        public PickupXp(net.minecraftforge.event.entity.player.PlayerXpEvent.PickupXp delegate) {
+            this(delegate.getEntity(), delegate.getOrb());
+        }
+
         public ExperienceOrb getOrb() { return orb; }
     }
 
@@ -28,6 +33,11 @@ public abstract class PlayerXpEvent extends PlayerEvent {
         public XpChange(Player player, int amount) {
             super(player);
             this.amount = amount;
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public XpChange(net.minecraftforge.event.entity.player.PlayerXpEvent.XpChange delegate) {
+            this(delegate.getEntity(), delegate.getAmount());
         }
 
         public int getAmount() { return amount; }
@@ -40,6 +50,11 @@ public abstract class PlayerXpEvent extends PlayerEvent {
         public LevelChange(Player player, int levels) {
             super(player);
             this.levels = levels;
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public LevelChange(net.minecraftforge.event.entity.player.PlayerXpEvent.LevelChange delegate) {
+            this(delegate.getEntity(), delegate.getLevels());
         }
 
         public int getLevels() { return levels; }

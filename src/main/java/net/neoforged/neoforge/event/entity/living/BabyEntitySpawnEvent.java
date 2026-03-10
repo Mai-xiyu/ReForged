@@ -24,6 +24,11 @@ public class BabyEntitySpawnEvent extends LivingEvent {
         this.causedByPlayer = causedByPlayer;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public BabyEntitySpawnEvent(net.minecraftforge.event.entity.living.BabyEntitySpawnEvent delegate) {
+        this(delegate.getParentA(), delegate.getParentB(), delegate.getChild(), delegate.getCausedByPlayer());
+    }
+
     public Mob getParentA() { return parentA; }
     public Mob getParentB() { return parentB; }
     @Nullable public AgeableMob getChild() { return child; }

@@ -18,6 +18,11 @@ public class LivingDropsEvent extends LivingEvent implements ICancellableEvent {
 		this.recentlyHit = recentlyHit;
 	}
 
+	/** Forge wrapper constructor for automatic event bridging */
+	public LivingDropsEvent(net.minecraftforge.event.entity.living.LivingDropsEvent delegate) {
+		this((LivingEntity) delegate.getEntity(), delegate.getSource(), delegate.getDrops(), delegate.isRecentlyHit());
+	}
+
 	public DamageSource getSource() {
 		return source;
 	}

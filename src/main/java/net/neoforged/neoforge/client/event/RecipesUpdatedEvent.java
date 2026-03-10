@@ -12,5 +12,10 @@ public class RecipesUpdatedEvent extends net.neoforged.bus.api.Event {
         this.recipeManager = recipeManager;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public RecipesUpdatedEvent(net.minecraftforge.client.event.RecipesUpdatedEvent forge) {
+        this(forge.getRecipeManager());
+    }
+
     public RecipeManager getRecipeManager() { return recipeManager; }
 }

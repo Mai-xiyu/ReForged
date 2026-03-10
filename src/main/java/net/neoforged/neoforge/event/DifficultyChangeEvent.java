@@ -15,6 +15,11 @@ public class DifficultyChangeEvent extends Event {
         this.oldDifficulty = oldDifficulty;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public DifficultyChangeEvent(net.minecraftforge.event.DifficultyChangeEvent delegate) {
+        this(delegate.getDifficulty(), delegate.getOldDifficulty());
+    }
+
     public net.minecraft.world.Difficulty getOldDifficulty() {
         return oldDifficulty;
     }

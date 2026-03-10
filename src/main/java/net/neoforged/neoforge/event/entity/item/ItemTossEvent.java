@@ -14,6 +14,11 @@ public class ItemTossEvent extends ItemEvent {
         this.player = player;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public ItemTossEvent(net.minecraftforge.event.entity.item.ItemTossEvent delegate) {
+        this((ItemEntity) delegate.getEntity(), delegate.getPlayer());
+    }
+
     public Player getPlayer() {
         return player;
     }

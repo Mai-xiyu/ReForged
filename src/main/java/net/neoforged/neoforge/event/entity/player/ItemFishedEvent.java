@@ -21,6 +21,11 @@ public class ItemFishedEvent extends PlayerEvent implements ICancellableEvent {
         this.hook = hook;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public ItemFishedEvent(net.minecraftforge.event.entity.player.ItemFishedEvent delegate) {
+        this(delegate.getDrops(), delegate.getRodDamage(), delegate.getHookEntity());
+    }
+
     public int getRodDamage() { return rodDamage; }
     public void damageRodBy(int rodDamage) { this.rodDamage = rodDamage; }
     public NonNullList<ItemStack> getDrops() { return stacks; }

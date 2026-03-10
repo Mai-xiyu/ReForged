@@ -21,6 +21,11 @@ public class EntityMountEvent extends Event implements ICancellableEvent {
         this.isMounting = isMounting;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public EntityMountEvent(net.minecraftforge.event.entity.EntityMountEvent delegate) {
+        this(delegate.getEntityMounting(), delegate.getEntityBeingMounted(), delegate.getLevel(), delegate.isMounting());
+    }
+
     public boolean isMounting() { return isMounting; }
     public boolean isDismounting() { return !isMounting; }
     public Entity getEntityMounting() { return entityMounting; }

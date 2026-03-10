@@ -36,6 +36,13 @@ public class RenderHandEvent extends Event implements ICancellableEvent {
         this.stack = stack;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public RenderHandEvent(net.minecraftforge.client.event.RenderHandEvent forge) {
+        this(forge.getHand(), forge.getPoseStack(), forge.getMultiBufferSource(), forge.getPackedLight(),
+                forge.getPartialTick(), forge.getInterpolatedPitch(), forge.getSwingProgress(),
+                forge.getEquipProgress(), forge.getItemStack());
+    }
+
     public InteractionHand getHand() { return hand; }
     public PoseStack getPoseStack() { return poseStack; }
     public MultiBufferSource getMultiBufferSource() { return multiBufferSource; }

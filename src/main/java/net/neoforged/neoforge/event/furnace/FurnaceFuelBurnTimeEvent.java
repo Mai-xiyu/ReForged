@@ -15,6 +15,11 @@ public class FurnaceFuelBurnTimeEvent extends Event {
         this.burnTime = burnTime;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public FurnaceFuelBurnTimeEvent(net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent delegate) {
+        this(delegate.getItemStack(), delegate.getBurnTime());
+    }
+
     public ItemStack getItemStack() { return itemStack; }
     public int getBurnTime() { return burnTime; }
     public void setBurnTime(int burnTime) { this.burnTime = burnTime; }

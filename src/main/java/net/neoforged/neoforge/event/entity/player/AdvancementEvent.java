@@ -26,6 +26,11 @@ public abstract class AdvancementEvent extends PlayerEvent {
         public AdvancementEarnEvent(Player player, AdvancementHolder earned) {
             super(player, earned);
         }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public AdvancementEarnEvent(net.minecraftforge.event.entity.player.AdvancementEvent.AdvancementEarnEvent delegate) {
+            this(delegate.getEntity(), delegate.getAdvancement());
+        }
     }
 
     /**
@@ -42,6 +47,12 @@ public abstract class AdvancementEvent extends PlayerEvent {
             this.advancementProgress = advancementProgress;
             this.criterionName = criterionName;
             this.progressType = progressType;
+        }
+
+        /** Forge wrapper constructor for automatic event bridging */
+        public AdvancementProgressEvent(net.minecraftforge.event.entity.player.AdvancementEvent.AdvancementProgressEvent delegate) {
+            this(delegate.getEntity(), delegate.getAdvancement(), delegate.getAdvancementProgress(), delegate.getCriterionName(),
+                    delegate.getProgressType() == net.minecraftforge.event.entity.player.AdvancementEvent.AdvancementProgressEvent.ProgressType.GRANT ? ProgressType.GRANT : ProgressType.REVOKE);
         }
 
         public AdvancementProgress getAdvancementProgress() { return advancementProgress; }

@@ -25,6 +25,13 @@ public class RenderBlockScreenEffectEvent extends net.neoforged.bus.api.Event
         this.blockPos = blockPos;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public RenderBlockScreenEffectEvent(net.minecraftforge.client.event.RenderBlockScreenEffectEvent forge) {
+        this(forge.getPlayer(), forge.getPoseStack(),
+                OverlayType.valueOf(forge.getOverlayType().name()),
+                forge.getBlockState(), forge.getBlockPos());
+    }
+
     public Player getPlayer() { return player; }
     public PoseStack getPoseStack() { return poseStack; }
     public OverlayType getOverlayType() { return overlayType; }

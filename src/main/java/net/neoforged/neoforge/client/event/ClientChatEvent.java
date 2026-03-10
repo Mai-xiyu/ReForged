@@ -15,6 +15,11 @@ public class ClientChatEvent extends net.neoforged.bus.api.Event implements ICan
         this.message = this.originalMessage;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public ClientChatEvent(net.minecraftforge.client.event.ClientChatEvent forge) {
+        this(forge.getMessage());
+    }
+
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = Strings.nullToEmpty(message); }
     public String getOriginalMessage() { return originalMessage; }

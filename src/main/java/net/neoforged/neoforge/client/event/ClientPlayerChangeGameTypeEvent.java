@@ -18,6 +18,11 @@ public class ClientPlayerChangeGameTypeEvent extends Event {
         this.newGameType = newGameType;
     }
 
+    /** Wrapper constructor for EventBusAdapter bridging. */
+    public ClientPlayerChangeGameTypeEvent(net.minecraftforge.client.event.ClientPlayerChangeGameTypeEvent forge) {
+        this(forge.getInfo(), forge.getCurrentGameType(), forge.getNewGameType());
+    }
+
     public PlayerInfo getInfo() { return info; }
     public GameType getCurrentGameType() { return currentGameType; }
     public GameType getNewGameType() { return newGameType; }

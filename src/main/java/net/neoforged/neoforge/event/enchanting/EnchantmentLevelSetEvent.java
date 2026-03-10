@@ -25,6 +25,11 @@ public class EnchantmentLevelSetEvent extends Event {
         this.enchantLevel = enchantLevel;
     }
 
+    /** Forge wrapper constructor for automatic event bridging */
+    public EnchantmentLevelSetEvent(net.minecraftforge.event.enchanting.EnchantmentLevelSetEvent delegate) {
+        this(delegate.getLevel(), delegate.getPos(), delegate.getEnchantRow(), delegate.getPower(), delegate.getItem(), delegate.getEnchantLevel());
+    }
+
     public Level getLevel() { return level; }
     public BlockPos getPos() { return pos; }
     public int getEnchantRow() { return enchantRow; }
