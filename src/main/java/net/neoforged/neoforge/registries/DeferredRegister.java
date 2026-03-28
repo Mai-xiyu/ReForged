@@ -14,6 +14,9 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/** Tracks a DeferredHolder that needs registry back-fill after makeRegistry(). */
+record PendingHolder<T>(DeferredHolder<T, ?> holder, String name, Supplier<? extends T> supplier) {}
+
 /**
  * Proxy for NeoForge's {@code DeferredRegister}.
  * Uses composition to wrap Forge's DeferredRegister, since constructor signatures differ.
@@ -48,6 +51,14 @@ public class DeferredRegister<T> {
     private boolean customRegistry;
     /** The custom MappedRegistry created by makeRegistry(), null otherwise. */
     private Registry<T> customRegistryInstance;
+    /**
+     * Entries registered while still in no-op mode, before makeRegistry() is called.
+     * These are flushed into the custom registry once makeRegistry() creates it.
+     * Key = entry name, Value = supplier. Preserves insertion order.
+     */
+    private final LinkedHashMap<String, Supplier<? extends T>> pendingEntries = new LinkedHashMap<>();
+    /** DeferredHolders created during no-op mode that need MappedRegistry back-fill. */
+    private final List<PendingHolder<T>> pendingHolders = new ArrayList<>();
 
     protected DeferredRegister(net.minecraftforge.registries.DeferredRegister<T> delegate,
                                String modid, boolean isNoOp, ResourceKey<? extends Registry<T>> registryKey) {
@@ -170,13 +181,18 @@ public class DeferredRegister<T> {
         }
         if (isNoOp) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath(modid, name);
-            LOGGER.debug("[ReForged] No-op register: {}", id);
+            LOGGER.debug("[ReForged] No-op register (pending): {}", id);
+            // Buffer the entry — it may be flushed into a custom registry later by makeRegistry()
+            pendingEntries.put(name, (Supplier<? extends T>) sup);
             if (registryKey != null) {
-                // Create a full ResourceKey for this entry so getKey() works downstream (Registrate)
                 ResourceKey<T> entryKey = ResourceKey.create((ResourceKey<Registry<T>>) registryKey, id);
-                return (DeferredHolder<T, I>) DeferredHolder.createDirect(entryKey, sup);
+                DeferredHolder<T, I> holder = (DeferredHolder<T, I>) DeferredHolder.createDirect(entryKey, sup);
+                pendingHolders.add(new PendingHolder<>(holder, name, sup));
+                return holder;
             }
-            return DeferredHolder.createDirect(id, sup);
+            DeferredHolder<T, I> holder = DeferredHolder.createDirect(id, sup);
+            pendingHolders.add(new PendingHolder<>(holder, name, sup));
+            return holder;
         }
         LOGGER.info("[ReForged] Registering entry '{}'  for mod '{}' via Forge DeferredRegister", name, modid);
         RegistryObject<I> obj = delegate.register(name, sup);
@@ -218,7 +234,7 @@ public class DeferredRegister<T> {
      * Get all registered entries.
      */
     public Collection<RegistryObject<T>> getEntries() {
-        if (isNoOp) return Collections.emptyList();
+        if (isNoOp || delegate == null) return Collections.emptyList();
         return delegate.getEntries();
     }
 
@@ -256,6 +272,7 @@ public class DeferredRegister<T> {
         RegistryBuilder<T> builder = builderSup.get();
         Registry<T> registry = builder.build();
         this.customRegistryInstance = registry;
+        flushPendingEntries();
         return () -> registry;
     }
 
@@ -276,7 +293,36 @@ public class DeferredRegister<T> {
         consumer.accept(builder);
         Registry<T> registry = builder.build();
         this.customRegistryInstance = registry;
+        flushPendingEntries();
         return registry;
+    }
+
+    /**
+     * Flush entries that were buffered during no-op mode into the newly created custom registry.
+     * This handles the NeoForge pattern where register() calls happen before makeRegistry().
+     */
+    @SuppressWarnings("unchecked")
+    private void flushPendingEntries() {
+        if (customRegistryInstance == null || pendingEntries.isEmpty()) return;
+        LOGGER.info("[ReForged] Flushing {} pending entries into custom registry '{}'",
+                pendingEntries.size(), registryKey != null ? registryKey.location() : "unknown");
+        unfreezeRegistry(customRegistryInstance);
+        int flushed = 0;
+        for (Map.Entry<String, Supplier<? extends T>> entry : pendingEntries.entrySet()) {
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath(modid, entry.getKey());
+            try {
+                T value = entry.getValue().get();
+                Registry.register((Registry<T>) customRegistryInstance, id, value);
+                flushed++;
+            } catch (Throwable t) {
+                LOGGER.error("[ReForged] Failed to flush '{}' into custom registry: {}",
+                        id, t.getMessage());
+            }
+        }
+        LOGGER.info("[ReForged] Flushed {}/{} entries into custom registry '{}'",
+                flushed, pendingEntries.size(), registryKey != null ? registryKey.location() : "unknown");
+        pendingEntries.clear();
+        pendingHolders.clear();
     }
 
     /**
@@ -298,11 +344,20 @@ public class DeferredRegister<T> {
                 clazz = clazz.getSuperclass();
             }
             if (frozenField != null) {
-                frozenField.setAccessible(true);
-                frozenField.setBoolean(registry, false);
+                // Use Unsafe to bypass Java 21 JPMS module access restrictions.
+                // setAccessible(true) fails when the target field is in a named module
+                // (e.g. minecraft@1.21.1) that doesn't open its package to the caller.
+                java.lang.reflect.Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+                unsafeField.setAccessible(true); // sun.misc is always accessible
+                sun.misc.Unsafe unsafe = (sun.misc.Unsafe) unsafeField.get(null);
+                long offset = unsafe.objectFieldOffset(frozenField);
+                unsafe.putBoolean(registry, offset, false);
+                LOGGER.debug("[ReForged] Successfully unfroze registry: {}", registry);
+            } else {
+                LOGGER.warn("[ReForged] Could not find 'frozen' field in registry class: {}", registry.getClass().getName());
             }
         } catch (Throwable t) {
-            LOGGER.debug("[ReForged] Could not unfreeze registry: {}", t.getMessage());
+            LOGGER.error("[ReForged] Could not unfreeze registry: {}", t.getMessage());
         }
     }
 
@@ -383,13 +438,31 @@ public class DeferredRegister<T> {
         @SuppressWarnings("unchecked")
         public <T> DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<T>>
         registerComponentType(String name, java.util.function.UnaryOperator<net.minecraft.core.component.DataComponentType.Builder<T>> builderOperator) {
-            return (DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<T>>)
-                    (DeferredHolder<?, ?>) this.register(name, () -> {
-                        net.minecraft.core.component.DataComponentType.Builder<T> builder =
-                                net.minecraft.core.component.DataComponentType.builder();
-                        builder = builderOperator.apply(builder);
-                        return builder.build();
-                    });
+            // Build the DataComponentType eagerly so we can register it immediately
+            // into the vanilla registry. Forge's DeferredRegister may not fire
+            // RegisterEvent for DATA_COMPONENT_TYPE reliably when the mod is loaded
+            // through ReForged's NeoModClassLoader bridge.
+            net.minecraft.core.component.DataComponentType.Builder<T> builder =
+                    net.minecraft.core.component.DataComponentType.builder();
+            builder = builderOperator.apply(builder);
+            net.minecraft.core.component.DataComponentType<T> builtType = builder.build();
+
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath(getNamespace(), name);
+            try {
+                Registry<net.minecraft.core.component.DataComponentType<?>> registry =
+                        net.minecraft.core.registries.BuiltInRegistries.DATA_COMPONENT_TYPE;
+                unfreezeRegistry(registry);
+                Registry.register(registry, id, builtType);
+                LOGGER.info("[ReForged] Eagerly registered DataComponentType '{}' into BuiltInRegistries", id);
+            } catch (Throwable t) {
+                LOGGER.warn("[ReForged] Could not eagerly register DataComponentType '{}': {}", id, t.getMessage());
+            }
+
+            // Also register through Forge's DeferredRegister for consistency
+            DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<T>> holder =
+                    (DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<T>>)
+                    (DeferredHolder<?, ?>) this.register(name, () -> builtType);
+            return holder;
         }
     }
 

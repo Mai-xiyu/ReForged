@@ -45,7 +45,8 @@
         "GuiRenderMixin",
         "FontJadePatchMixin",
         "ClientPacketListenerMixin",
-        "ScreenRenderSafetyMixin"
+        "ScreenRenderSafetyMixin",
+        "BlockEntityRenderDispatcherMixin"
     ],
     "server": [],
     "injectors": {

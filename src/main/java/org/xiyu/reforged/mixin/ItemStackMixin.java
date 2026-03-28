@@ -2,6 +2,9 @@ package org.xiyu.reforged.mixin;
 
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -15,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -77,6 +81,16 @@ public abstract class ItemStackMixin implements IItemStackExtension {
     @Nullable
     public <T> T getCapability(ItemCapability<T, Void> capability) {
         return capability.getCapability(stackSelf(), null);
+    }
+
+    // ── NeoForge hurtAndBreak(LivingEntity) overload ───────────────────────
+    // NeoForge adds an overload accepting LivingEntity instead of just ServerPlayer.
+    // Forge only has: hurtAndBreak(int, ServerLevel, @Nullable ServerPlayer, Consumer<Item>)
+    // We delegate by extracting ServerPlayer if the entity is one, otherwise pass null.
+
+    public void hurtAndBreak(int amount, ServerLevel level, @Nullable LivingEntity entity, Consumer<Item> onBreak) {
+        ServerPlayer sp = entity instanceof ServerPlayer p ? p : null;
+        stackSelf().hurtAndBreak(amount, level, sp, onBreak);
     }
 
     // ── Safe tooltip rendering ─────────────────────────────────────────────

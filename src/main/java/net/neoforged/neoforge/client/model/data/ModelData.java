@@ -23,6 +23,16 @@ public class ModelData {
         return properties.containsKey(property);
     }
 
+    /**
+     * Creates a new builder pre-populated with this instance's properties,
+     * allowing derivation of a new ModelData with additional or overridden values.
+     */
+    public Builder derive() {
+        Builder b = new Builder();
+        b.map.putAll(this.properties);
+        return b;
+    }
+
     public static Builder builder() {
         return new Builder();
     }

@@ -264,12 +264,11 @@ public final class NeoForgeEventBusAdapter {
                     ((Consumer<Object>) finalConsumer).accept(neoEvent);
                 } catch (Throwable t) {
                     String message = t.getMessage() != null ? t.getMessage() : "";
-                    boolean balmConfigNull = finalEventType.getSimpleName().equals("ServerAboutToStartEvent")
-                            && message.contains("config")
-                            && message.contains("null")
+                    boolean balmConfigNull = message.contains("config") && message.contains("null")
                             && stackContains(t, "net.blay09.mods.balm");
                     if (balmConfigNull) {
-                        LOGGER.warn("[ReForged] Suppressed Balm ServerAboutToStart config-null handler error; config not ready yet");
+                        LOGGER.debug("[ReForged] Suppressed Balm config-null error in {} handler; config not ready yet",
+                                finalEventType.getSimpleName());
                         return;
                     }
                     LOGGER.error("[ReForged] Wrapped addListener handler error for {}: {}",
@@ -290,7 +289,19 @@ public final class NeoForgeEventBusAdapter {
                 delegate.addListener(priority, receiveCancelled,
                     (Class) eventType, (Consumer<Event>) event -> {
                         if (!finalEventType2.isInstance(event)) return;
-                        ((Consumer<Object>) finalConsumer2).accept(event);
+                        try {
+                            ((Consumer<Object>) finalConsumer2).accept(event);
+                        } catch (Throwable t2) {
+                            String msg = t2.getMessage() != null ? t2.getMessage() : "";
+                            if (msg.contains("config") && msg.contains("null")
+                                    && stackContains(t2, "net.blay09.mods.balm")) {
+                                LOGGER.debug("[ReForged] Suppressed Balm config-null error in direct {} handler",
+                                        finalEventType2.getSimpleName());
+                                return;
+                            }
+                            LOGGER.error("[ReForged] Direct addListener handler error for {}: {}",
+                                    finalEventType2.getSimpleName(), t2.getMessage(), t2);
+                        }
                     });
                 LOGGER.info("[ReForged] Registered direct addListener for {}", eventType.getSimpleName());
             } catch (Throwable t) {

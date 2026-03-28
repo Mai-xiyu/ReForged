@@ -118,9 +118,23 @@ public abstract class ModelEvent extends Event {
 
     /**
      * Register custom geometry loaders.
+     *
+     * <p>Uses a {@link #PENDING_LOADERS} static map as a robust capture mechanism.
+     * When the bridge handler wraps the Forge event, extracting Forge's private
+     * {@code loaders} map may fail due to Java 21 JPMS restrictions.
+     * Any loader registered via {@link #register(ResourceLocation, IGeometryLoader)}
+     * is always captured in PENDING_LOADERS so the GeometryLoaderManagerMixin can
+     * merge them into Forge's LOADERS after init().</p>
      */
     public static class RegisterGeometryLoaders extends ModelEvent implements IModBusEvent {
         private final Map<ResourceLocation, IGeometryLoader<?>> loaders;
+
+        /**
+         * Loaders captured from NeoForge mods. The GeometryLoaderManagerMixin
+         * reads and clears this after Forge's init() to merge into LOADERS.
+         */
+        public static final Map<ResourceLocation, IGeometryLoader<?>> PENDING_LOADERS =
+                new java.util.concurrent.ConcurrentHashMap<>();
 
         public RegisterGeometryLoaders(Map<ResourceLocation, IGeometryLoader<?>> loaders) {
             this.loaders = loaders;
@@ -133,21 +147,24 @@ public abstract class ModelEvent extends Event {
         }
 
         /**
-         * Extract the loaders map from the Forge event, wrapping Forge IGeometryLoader
-         * instances into NeoForge IGeometryLoader type so both sides share the same map.
+         * Extract the loaders map from the Forge event using Unsafe to bypass JPMS.
          */
         @SuppressWarnings("unchecked")
         private static Map<ResourceLocation, IGeometryLoader<?>> extractForgeLoaders(
                 net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders forge) {
             try {
                 Field f = forge.getClass().getDeclaredField("loaders");
-                f.setAccessible(true);
-                Map<ResourceLocation, ?> forgeMap = (Map<ResourceLocation, ?>) f.get(forge);
-                // The Forge map contains net.minecraftforge IGeometryLoader instances.
-                // NeoForge's IGeometryLoader has the same read() signature so a cast works
-                // at runtime because of type erasure.
+                // Use Unsafe to bypass module access restrictions (Java 21 JPMS)
+                Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+                unsafeField.setAccessible(true);
+                sun.misc.Unsafe unsafe = (sun.misc.Unsafe) unsafeField.get(null);
+                long offset = unsafe.objectFieldOffset(f);
+                Map<ResourceLocation, ?> forgeMap = (Map<ResourceLocation, ?>) unsafe.getObject(forge, offset);
                 return (Map<ResourceLocation, IGeometryLoader<?>>) (Map<?, ?>) forgeMap;
             } catch (Throwable t) {
+                org.slf4j.LoggerFactory.getLogger("ReForged").error(
+                        "[ReForged] CRITICAL: Failed to extract Forge geometry loaders map — "
+                        + "NeoForge custom model loaders will use PENDING_LOADERS fallback: {}", t.getMessage());
                 return new java.util.HashMap<>();
             }
         }
@@ -155,6 +172,8 @@ public abstract class ModelEvent extends Event {
         public void register(ResourceLocation key, IGeometryLoader<?> loader) {
             Preconditions.checkArgument(!loaders.containsKey(key), "Geometry loader already registered: " + key);
             loaders.put(key, loader);
+            // Always capture in PENDING_LOADERS as a robust fallback
+            PENDING_LOADERS.put(key, loader);
         }
     }
 }

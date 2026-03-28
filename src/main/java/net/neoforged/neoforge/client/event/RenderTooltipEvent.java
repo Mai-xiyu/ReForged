@@ -128,4 +128,35 @@ public class RenderTooltipEvent extends Event {
         public int getOriginalBorderStart() { return originalBorderStart; }
         public int getOriginalBorderEnd() { return originalBorderEnd; }
     }
+
+    // ── GatherComponents ──────────────────────────────────
+    /**
+     * Fired before tooltip rendering to gather and modify tooltip components.
+     * NeoForge mods use this to add/remove/modify tooltip lines.
+     */
+    public static class GatherComponents extends Event {
+        @NotNull private final ItemStack itemStack;
+        private final List<com.mojang.datafixers.util.Either<net.minecraft.network.chat.FormattedText, net.minecraft.world.inventory.tooltip.TooltipComponent>> tooltipElements;
+        private int maxWidth;
+
+        /** Required by Forge's EventListenerHelper */
+        public GatherComponents() {
+            this.itemStack = ItemStack.EMPTY;
+            this.tooltipElements = new java.util.ArrayList<>();
+            this.maxWidth = -1;
+        }
+
+        public GatherComponents(@NotNull ItemStack itemStack,
+                                List<com.mojang.datafixers.util.Either<net.minecraft.network.chat.FormattedText, net.minecraft.world.inventory.tooltip.TooltipComponent>> tooltipElements,
+                                int maxWidth) {
+            this.itemStack = itemStack;
+            this.tooltipElements = tooltipElements;
+            this.maxWidth = maxWidth;
+        }
+
+        @NotNull public ItemStack getItemStack() { return itemStack; }
+        public List<com.mojang.datafixers.util.Either<net.minecraft.network.chat.FormattedText, net.minecraft.world.inventory.tooltip.TooltipComponent>> getTooltipElements() { return tooltipElements; }
+        public int getMaxWidth() { return maxWidth; }
+        public void setMaxWidth(int maxWidth) { this.maxWidth = maxWidth; }
+    }
 }

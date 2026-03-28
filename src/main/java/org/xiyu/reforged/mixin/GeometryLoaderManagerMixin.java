@@ -17,7 +17,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;/**
  * Bridges model loader registration for NeoForge mods and remaps namespace lookups.
@@ -54,33 +53,36 @@ public class GeometryLoaderManagerMixin {
     }
 
     /**
-     * After Forge's init() freezes the LOADERS map, fire the NeoForge
-     * RegisterGeometryLoaders event to let NeoForge mods register custom loaders,
-     * then rebuild LOADERS with the additional entries.
+     * After Forge's init() freezes the LOADERS map, merge any geometry loaders
+     * registered by NeoForge mods (captured in PENDING_LOADERS) into the map.
+     *
+     * <p>NeoForge mods register custom loaders during the bridge-forwarded
+     * RegisterGeometryLoaders event. Even if extractForgeLoaders() succeeded and
+     * loaders went into Forge's map directly, PENDING_LOADERS provides a robust
+     * fallback. We merge from PENDING_LOADERS to ensure no loaders are lost.</p>
      */
     @Inject(method = "init", at = @At("TAIL"))
     private static void reforged$bridgeModelLoaderRegistration(CallbackInfo ci) {
         REFORGED_LOGGER.info("[ReForged] Bridging model loader registration to NeoForge mods...");
         try {
-            // Create a NeoForge-typed map for the event, dispatch it
-            Map<ResourceLocation, net.neoforged.neoforge.client.model.geometry.IGeometryLoader<?>> neoLoaders = new HashMap<>();
-            var neoEvent = new net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders(neoLoaders);
-            dispatchToNeoForgeModBus(neoEvent);
-
-            if (!neoLoaders.isEmpty()) {
-                // Wrap each NeoForge loader with error handling — if a loader fails
-                // (e.g. due to missing NeoForge patches in vanilla classes), convert the
-                // error to a JsonParseException so the model system treats it as a missing
-                // model rather than crashing the game.
+            // Merge any pending loaders captured from bridge-forwarded events
+            var pending = net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders.PENDING_LOADERS;
+            if (!pending.isEmpty()) {
                 Map<ResourceLocation, net.minecraftforge.client.model.geometry.IGeometryLoader<?>> merged = new HashMap<>(LOADERS);
-                neoLoaders.forEach((key, loader) -> {
-                    merged.put(key, wrapWithErrorHandling(key, loader));
-                    REFORGED_LOGGER.info("[ReForged]   Registered NeoForge model loader: {}", key);
+                pending.forEach((key, loader) -> {
+                    // Only add if not already present (extracted Forge map might already contain it)
+                    if (!merged.containsKey(key)) {
+                        merged.put(key, wrapWithErrorHandling(key, loader));
+                        REFORGED_LOGGER.info("[ReForged]   Merged NeoForge model loader: {}", key);
+                    } else {
+                        REFORGED_LOGGER.info("[ReForged]   NeoForge model loader '{}' already in LOADERS (direct map worked)", key);
+                    }
                 });
                 LOADERS = ImmutableMap.copyOf(merged);
-                REFORGED_LOGGER.info("[ReForged] RegisterGeometryLoaders dispatched. {} new loaders registered.", neoLoaders.size());
+                pending.clear();
+                REFORGED_LOGGER.info("[ReForged] Geometry loader bridge complete. Total loaders: {}", LOADERS.size());
             } else {
-                REFORGED_LOGGER.info("[ReForged] RegisterGeometryLoaders dispatched. No new loaders registered.");
+                REFORGED_LOGGER.info("[ReForged] No pending NeoForge geometry loaders to merge.");
             }
         } catch (Throwable t) {
             REFORGED_LOGGER.error("[ReForged] Failed to bridge model loader registration", t);
@@ -109,17 +111,4 @@ public class GeometryLoaderManagerMixin {
         };
     }
 
-    /**
-     * Dispatch a NeoForge event to the Forge mod event bus via NeoForgeModLoader.
-     */
-    private static void dispatchToNeoForgeModBus(net.minecraftforge.eventbus.api.Event neoEvent) {
-        try {
-            Class<?> neoModLoader = Class.forName("org.xiyu.reforged.core.NeoForgeModLoader");
-            Method dispatch = neoModLoader.getMethod("dispatchNeoForgeModEvent",
-                    net.minecraftforge.eventbus.api.Event.class);
-            dispatch.invoke(null, neoEvent);
-        } catch (Throwable t) {
-            REFORGED_LOGGER.warn("[ReForged] Could not dispatch event via NeoForgeModLoader: {}", t.getMessage());
-        }
-    }
 }

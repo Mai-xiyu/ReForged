@@ -92,7 +92,10 @@ public class ReForgedMixinPlugin implements IMixinConfigPlugin {
             }
         }
         // After JadeEntityAccessMixin adds callGetTypeName(),
-        // add EntityAccess interface to Entity's class node via ASM
+        // add EntityAccess interface to Entity's class node via ASM.
+        // The EntityAccess class will be resolved from the jade.neoforge module
+        // in the Forge module layer — no shim needed. JPMS module resolution
+        // ensures Entity (minecraft module) and Jade both see the same class.
         if (mixinClassName.endsWith("JadeEntityAccessMixin") && jadePresent) {
             String entityAccessInternal = "snownee/jade/mixin/EntityAccess";
             if (!targetClass.interfaces.contains(entityAccessInternal)) {
