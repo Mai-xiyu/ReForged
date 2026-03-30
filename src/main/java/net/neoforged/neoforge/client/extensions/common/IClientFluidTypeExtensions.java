@@ -9,73 +9,54 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Client-side rendering extensions for {@link FluidType}.
- * Provides texture locations and tint colors for fluid rendering.
+ * Extends Forge's interface so that NeoForge mod implementations are compatible with Forge's rendering pipeline.
+ * The {@link #of} methods query the Forge FluidType's registered render properties.
  */
-public interface IClientFluidTypeExtensions {
+public interface IClientFluidTypeExtensions extends net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions {
 
     IClientFluidTypeExtensions DEFAULT = new IClientFluidTypeExtensions() {};
 
     static IClientFluidTypeExtensions of(FluidState state) {
-        return DEFAULT;
+        return of((net.minecraftforge.fluids.FluidType) state.getFluidType());
     }
 
     static IClientFluidTypeExtensions of(Fluid fluid) {
+        return of((net.minecraftforge.fluids.FluidType) fluid.getFluidType());
+    }
+
+    static IClientFluidTypeExtensions of(net.minecraftforge.fluids.FluidType type) {
+        // Query Forge's registered render properties via getRenderPropertiesInternal()
+        Object props = type.getRenderPropertiesInternal();
+        if (props instanceof IClientFluidTypeExtensions ext) {
+            return ext;
+        }
+        if (props instanceof net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions forgeExt) {
+            // Wrap Forge's instance in our interface
+            return new IClientFluidTypeExtensions() {
+                @Override
+                public int getTintColor() {
+                    return forgeExt.getTintColor();
+                }
+
+                @Nullable
+                @Override
+                public ResourceLocation getStillTexture() {
+                    return forgeExt.getStillTexture();
+                }
+
+                @Nullable
+                @Override
+                public ResourceLocation getFlowingTexture() {
+                    return forgeExt.getFlowingTexture();
+                }
+
+                @Nullable
+                @Override
+                public ResourceLocation getOverlayTexture() {
+                    return forgeExt.getOverlayTexture();
+                }
+            };
+        }
         return DEFAULT;
-    }
-
-    static IClientFluidTypeExtensions of(FluidType type) {
-        // In a full implementation, this would look up the registered extensions.
-        // For the shim, return the default.
-        return DEFAULT;
-    }
-
-    /**
-     * Returns the tint color applied to the fluid texture (ARGB).
-     */
-    default int getTintColor() {
-        return 0xFFFFFFFF;
-    }
-
-    /**
-     * Returns the still texture location for this fluid.
-     */
-    @Nullable
-    default ResourceLocation getStillTexture() {
-        return null;
-    }
-
-    /**
-     * Returns the flowing texture location for this fluid.
-     */
-    @Nullable
-    default ResourceLocation getFlowingTexture() {
-        return null;
-    }
-
-    /**
-     * Returns the overlay texture for when the fluid is adjacent to non-opaque blocks.
-     */
-    @Nullable
-    default ResourceLocation getOverlayTexture() {
-        return null;
-    }
-
-    @Nullable
-    default ResourceLocation getStillTexture(FluidStack stack) {
-        return getStillTexture();
-    }
-
-    @Nullable
-    default ResourceLocation getFlowingTexture(FluidStack stack) {
-        return getFlowingTexture();
-    }
-
-    @Nullable
-    default ResourceLocation getOverlayTexture(FluidStack stack) {
-        return getOverlayTexture();
-    }
-
-    default int getTintColor(FluidStack stack) {
-        return getTintColor();
     }
 }

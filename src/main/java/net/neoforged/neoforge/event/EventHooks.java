@@ -296,7 +296,8 @@ public final class EventHooks {
     }
 
     public static List<PreparableReloadListener> onResourceReload(ReloadableServerResources serverResources, HolderLookup.Provider registries, net.minecraft.core.RegistryAccess registryAccess) {
-        return ForgeEventFactory.onResourceReload(serverResources, registries, registryAccess);
+        // Forge 51 (1.21): onResourceReload(ReloadableServerResources, RegistryAccess) — no separate Provider param
+        return ForgeEventFactory.onResourceReload(serverResources, registryAccess);
     }
 
     @SuppressWarnings("removal")
@@ -565,8 +566,9 @@ public final class EventHooks {
     // ── Sleep Events ──────────────────────────────────────
 
     public static boolean canEntityContinueSleeping(LivingEntity sleeper, @Nullable net.minecraft.world.entity.player.Player.BedSleepingProblem problem) {
-        // NeoForge fires CanContinueSleepingEvent — delegate to Forge's SleepingLocationCheckEvent
-        return problem == null; // Allow sleeping if no problem
+        var event = new net.neoforged.neoforge.event.entity.player.CanContinueSleepingEvent(sleeper, problem);
+        NeoForge.EVENT_BUS.post(event);
+        return event.mayContinueSleeping();
     }
 
     public static com.mojang.datafixers.util.Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, net.minecraft.util.Unit> canPlayerStartSleeping(ServerPlayer player, BlockPos pos, @Nullable com.mojang.datafixers.util.Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, net.minecraft.util.Unit> vanillaResult) {
@@ -623,32 +625,44 @@ public final class EventHooks {
     // ── Enchantment Level Events ──────────────────────────
 
     public static int getEnchantmentLevelSpecific(int level, ItemStack stack, Holder<net.minecraft.world.item.enchantment.Enchantment> ench) {
-        // NeoForge fires GetEnchantmentLevelEvent — return original level on Forge
-        return level;
+        var map = new java.util.HashMap<Holder<net.minecraft.world.item.enchantment.Enchantment>, Integer>();
+        map.put(ench, level);
+        var event = new net.neoforged.neoforge.event.enchanting.GetEnchantmentLevelEvent(stack, map);
+        NeoForge.EVENT_BUS.post(event);
+        return event.getEnchantments().getOrDefault(ench, level);
     }
 
     public static net.minecraft.world.item.enchantment.ItemEnchantments getAllEnchantmentLevels(net.minecraft.world.item.enchantment.ItemEnchantments enchantments, ItemStack stack, Object lookup) {
-        // NeoForge fires GetEnchantmentLevelEvent — return as-is on Forge
-        return enchantments;
+        var map = new java.util.HashMap<Holder<net.minecraft.world.item.enchantment.Enchantment>, Integer>();
+        enchantments.entrySet().forEach(e -> map.put(e.getKey(), e.getIntValue()));
+        var event = new net.neoforged.neoforge.event.enchanting.GetEnchantmentLevelEvent(stack, map);
+        NeoForge.EVENT_BUS.post(event);
+        // Rebuild ItemEnchantments if modified
+        var builder = new net.minecraft.world.item.enchantment.ItemEnchantments.Mutable(enchantments);
+        for (var entry : event.getEnchantments().entrySet()) {
+            builder.set(entry.getKey(), entry.getValue());
+        }
+        return builder.toImmutable();
     }
 
     // ── Custom Spawners ───────────────────────────────────
 
     public static java.util.List<net.minecraft.world.level.CustomSpawner> getCustomSpawners(ServerLevel serverLevel, java.util.List<net.minecraft.world.level.CustomSpawner> customSpawners) {
-        // NeoForge fires ModifyCustomSpawnersEvent — return original list on Forge
-        return customSpawners;
+        var event = new net.neoforged.neoforge.event.level.ModifyCustomSpawnersEvent(serverLevel, customSpawners);
+        NeoForge.EVENT_BUS.post(event);
+        return event.getCustomSpawners();
     }
 
     // ── Entity Size ───────────────────────────────────────
 
     public static net.neoforged.neoforge.event.entity.EntityEvent.Size getEntitySizeForge(Entity entity, net.minecraft.world.entity.Pose pose, net.minecraft.world.entity.EntityDimensions size) {
-        var evt = new net.neoforged.neoforge.event.entity.EntityEvent.Size(entity);
+        var evt = new net.neoforged.neoforge.event.entity.EntityEvent.Size(entity, pose, size, size);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(evt);
         return evt;
     }
 
     public static net.neoforged.neoforge.event.entity.EntityEvent.Size getEntitySizeForge(Entity entity, net.minecraft.world.entity.Pose pose, net.minecraft.world.entity.EntityDimensions oldSize, net.minecraft.world.entity.EntityDimensions newSize) {
-        var evt = new net.neoforged.neoforge.event.entity.EntityEvent.Size(entity);
+        var evt = new net.neoforged.neoforge.event.entity.EntityEvent.Size(entity, pose, oldSize, newSize);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(evt);
         return evt;
     }

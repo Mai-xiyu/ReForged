@@ -46,7 +46,10 @@
         "FontJadePatchMixin",
         "ClientPacketListenerMixin",
         "ScreenRenderSafetyMixin",
-        "BlockEntityRenderDispatcherMixin"
+        "BlockEntityRenderDispatcherMixin",
+        "MinecraftMixin",
+        "GameRendererMixin",
+        "GuiGraphicsExtensionMixin"
     ],
     "server": [],
     "injectors": {

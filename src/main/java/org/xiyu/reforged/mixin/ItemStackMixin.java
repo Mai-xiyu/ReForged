@@ -1,23 +1,33 @@
 package org.xiyu.reforged.mixin;
 
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.neoforged.neoforge.capabilities.ItemCapability;
 import net.neoforged.neoforge.common.extensions.IItemStackExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -111,5 +121,40 @@ public abstract class ItemStackMixin implements IItemStackExtension {
         } catch (Exception e) {
             REFORGED_TOOLTIP_LOGGER.debug("[ReForged] Tooltip error for {}: {}", item.getClass().getName(), e.getMessage());
         }
+    }
+
+    // ── NeoForge ItemAttributeModifierEvent hook ───────────────────────────
+    // Vanilla forEachModifier reads DataComponents directly, bypassing NeoForge's
+    // ItemAttributeModifierEvent. We intercept at HEAD and route through
+    // IItemStackExtension.getAttributeModifiers() which fires the event.
+
+    @Inject(
+        method = "forEachModifier(Lnet/minecraft/world/entity/EquipmentSlotGroup;Ljava/util/function/BiConsumer;)V",
+        at = @At("HEAD"),
+        cancellable = true,
+        remap = false
+    )
+    private void reforged$modifyGroupModifiers(EquipmentSlotGroup slotGroup,
+                                               BiConsumer<Holder<Attribute>, AttributeModifier> consumer,
+                                               CallbackInfo ci) {
+        ItemAttributeModifiers modifiers = this.getAttributeModifiers();
+        modifiers.forEach(slotGroup, consumer);
+        EnchantmentHelper.forEachModifier(stackSelf(), slotGroup, consumer);
+        ci.cancel();
+    }
+
+    @Inject(
+        method = "forEachModifier(Lnet/minecraft/world/entity/EquipmentSlot;Ljava/util/function/BiConsumer;)V",
+        at = @At("HEAD"),
+        cancellable = true,
+        remap = false
+    )
+    private void reforged$modifySlotModifiers(EquipmentSlot slot,
+                                              BiConsumer<Holder<Attribute>, AttributeModifier> consumer,
+                                              CallbackInfo ci) {
+        ItemAttributeModifiers modifiers = this.getAttributeModifiers();
+        modifiers.forEach(slot, consumer);
+        EnchantmentHelper.forEachModifier(stackSelf(), slot, consumer);
+        ci.cancel();
     }
 }

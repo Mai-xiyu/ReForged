@@ -102,6 +102,7 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderBlockScreenEffectEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.ScreenshotEvent;
+import org.xiyu.reforged.shim.NeoForgeShim;
 import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -175,19 +176,27 @@ public class ClientHooks {
     }
 
     public static void fireClientTickPre() {
-        // NeoForge fires ClientTickEvent.Pre — not available in Forge; no-op
+        // ClientTickEvent.Pre is bridged automatically via wrapper constructor:
+        // NeoForge's ClientTickEvent.Pre(ForgeClientTickEvent.Pre) wraps the Forge event.
+        // The NeoForgeEventBusAdapter detects this and registers a Forge listener.
+        // No explicit firing needed here.
     }
 
     public static void fireClientTickPost() {
-        // NeoForge fires ClientTickEvent.Post — not available in Forge; no-op
+        // ClientTickEvent.Post is bridged automatically via wrapper constructor.
+        // See fireClientTickPre() for explanation.
     }
 
     public static void fireRenderFramePre(Object partialTick) {
-        // NeoForge fires RenderFrameEvent.Pre — not available in Forge; no-op
+        // RenderFrameEvent.Pre is fired by MinecraftMixin.reforged$onRenderFramePre().
+        // This method is kept for API compatibility but the actual event dispatch
+        // happens in the Mixin injection point.
     }
 
     public static void fireRenderFramePost(Object partialTick) {
-        // NeoForge fires RenderFrameEvent.Post — not available in Forge; no-op
+        // RenderFrameEvent.Post is fired by MinecraftMixin.reforged$onRenderFramePost().
+        // This method is kept for API compatibility but the actual event dispatch
+        // happens in the Mixin injection point.
     }
 
     // ── Level Rendering ───────────────────────────────────
@@ -201,8 +210,13 @@ public class ClientHooks {
     }
 
     public static void dispatchRenderStage(RenderLevelStageEvent.Stage stage, LevelRenderer levelRenderer, @Nullable PoseStack poseStack, Matrix4f modelViewMatrix, Matrix4f projectionMatrix, int renderTick, Camera camera, Frustum frustum) {
-        // NeoForge's Stage-based overload — delegate to the RenderType variant where possible
-        // Forge uses RenderType-based dispatch, so this is a compatibility shim
+        try {
+            var partialTick = Minecraft.getInstance().getTimer();
+            var event = new RenderLevelStageEvent(stage, levelRenderer, poseStack, modelViewMatrix, projectionMatrix, renderTick, partialTick, camera, frustum);
+            NeoForgeShim.EVENT_BUS.post(event);
+        } catch (Throwable t) {
+            // Don't crash the game if event dispatch fails
+        }
     }
 
     // ── First-Person Rendering ────────────────────────────
@@ -219,8 +233,11 @@ public class ClientHooks {
     // ── Texture & Color Init ──────────────────────────────
 
     public static void onTextureAtlasStitched(TextureAtlas atlas) {
-        // Forge 1.21.1 does not expose a matching public post-stitch event here.
-        // Keep the NeoForge API entrypoint to preserve binary compatibility.
+        try {
+            NeoForgeShim.EVENT_BUS.post(new net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent(atlas));
+        } catch (Throwable t) {
+            // Don't crash if event dispatch fails
+        }
     }
 
     public static void onBlockColorsInit(BlockColors blockColors) {
@@ -255,8 +272,14 @@ public class ClientHooks {
     }
 
     public static double getFieldOfView(GameRenderer renderer, Camera camera, double partialTick, double fov, boolean usedConfiguredFov) {
-        // NeoForge fires ViewportEvent.ComputeFov — Forge has getFieldOfViewModifier but not this exact variant
-        return fov;
+        // NeoForge fires ViewportEvent.ComputeFov — bridge via direct post
+        try {
+            var event = new net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov(renderer, camera, partialTick, fov, usedConfiguredFov);
+            NeoForgeShim.EVENT_BUS.post(event);
+            return event.getFOV();
+        } catch (Throwable t) {
+            return fov;
+        }
     }
 
     public static CalculatePlayerTurnEvent getTurnPlayerValues(double mouseSensitivity, boolean cinematicCameraEnabled) {
@@ -264,8 +287,9 @@ public class ClientHooks {
     }
 
     public static float getDetachedCameraDistance(Camera camera, boolean flipped, float entityScale, float distance) {
-        // NeoForge fires ViewportEvent.ComputeCameraAngles — Forge doesn't expose this
-        return distance;
+        var event = new net.neoforged.neoforge.client.event.CalculateDetachedCameraDistanceEvent(distance);
+        NeoForgeShim.EVENT_BUS.post(event);
+        return (float) event.getDistance();
     }
 
     // ── Title Screen ──────────────────────────────────────
@@ -284,8 +308,14 @@ public class ClientHooks {
 
     @Nullable
     public static Music selectMusic(Music situational, @Nullable SoundInstance playing) {
-        // NeoForge-specific event — not available in Forge
-        return situational;
+        // Fire NeoForge SelectMusicEvent
+        try {
+            var event = new net.neoforged.neoforge.client.event.SelectMusicEvent(situational, playing);
+            NeoForgeShim.EVENT_BUS.post(event);
+            return event.getMusic();
+        } catch (Throwable t) {
+            return situational;
+        }
     }
 
     // ── Fog & Viewport ────────────────────────────────────
@@ -355,7 +385,9 @@ public class ClientHooks {
     // ── Screenshot ────────────────────────────────────────
 
     public static ScreenshotEvent onScreenshot(NativeImage image, File screenshotFile) {
-        return new ScreenshotEvent(image, screenshotFile);
+        var event = new ScreenshotEvent(image, screenshotFile);
+        NeoForgeShim.EVENT_BUS.post(event);
+        return event;
     }
 
     // ── Game Type Change ──────────────────────────────────
@@ -464,7 +496,12 @@ public class ClientHooks {
     // ── Piston Rendering ──────────────────────────────────
 
     public static void renderPistonMovedBlocks(BlockPos pos, BlockState state, PoseStack stack, MultiBufferSource bufferSource, Level level, boolean checkSides, int packedOverlay, BlockRenderDispatcher blockRenderer) {
-        // Forge handles piston rendering internally; no-op for NeoForge API compat
+        // Delegate to Forge's block renderer for piston moved blocks
+        try {
+            blockRenderer.renderSingleBlock(state, stack, bufferSource, level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, pos), packedOverlay);
+        } catch (Throwable t) {
+            // Fallback: don't crash if rendering fails
+        }
     }
 
     // ── Registration Events ───────────────────────────────
@@ -509,7 +546,11 @@ public class ClientHooks {
 
     @Nullable
     public static Component onClientSystemChat(Component message, boolean overlay) {
-        return ForgeHooksClient.onClientSystemMessage(message, overlay);
+        // Forge 51 (1.21): onClientSystemChat(Component, boolean, RegistryAccess)
+        RegistryAccess registryAccess = Minecraft.getInstance().level != null
+                ? Minecraft.getInstance().level.registryAccess()
+                : RegistryAccess.EMPTY;
+        return ForgeHooksClient.onClientSystemChat(message, overlay, registryAccess);
     }
 
     @NotNull
@@ -643,11 +684,34 @@ public class ClientHooks {
     // ── Section Geometry ──────────────────────────────────
 
     public static List<AddSectionGeometryEvent.AdditionalSectionRenderer> gatherAdditionalRenderers(BlockPos sectionOrigin, Level level) {
-        return List.of(); // NeoForge-specific — no-op on Forge
+        try {
+            var sectionPos = net.minecraft.core.SectionPos.of(sectionOrigin);
+            var event = new AddSectionGeometryEvent(sectionPos, level);
+            NeoForgeShim.EVENT_BUS.post(event);
+            return event.getAdditionalRenderers();
+        } catch (Throwable t) {
+            return List.of();
+        }
     }
 
     public static void addAdditionalGeometry(List<AddSectionGeometryEvent.AdditionalSectionRenderer> additionalRenderers, Function<RenderType, VertexConsumer> getOrCreateBuilder, Object region, PoseStack transformation) {
-        // NeoForge-specific — no-op on Forge
+        if (additionalRenderers.isEmpty()) return;
+        try {
+            // Build a SectionRenderingContext from the region
+            net.minecraft.core.SectionPos sectionPos = net.minecraft.core.SectionPos.of(0, 0, 0); // placeholder
+            BlockAndTintGetter blockGetter = region instanceof BlockAndTintGetter bat ? bat : null;
+            if (blockGetter == null) return;
+            var ctx = new AddSectionGeometryEvent.SectionRenderingContext(blockGetter, sectionPos);
+            for (var renderer : additionalRenderers) {
+                try {
+                    renderer.render(ctx);
+                } catch (Throwable t) {
+                    // Don't crash on individual renderers
+                }
+            }
+        } catch (Throwable t) {
+            // Safety net
+        }
     }
 
     // ── Init ──────────────────────────────────────────────
@@ -673,8 +737,13 @@ public class ClientHooks {
     // ── Effect Tooltip ────────────────────────────────────
 
     public static List<Component> getEffectTooltip(EffectRenderingInventoryScreen<?> screen, MobEffectInstance effectInst, List<Component> tooltip) {
-        // NeoForge-specific — return original tooltip
-        return tooltip;
+        try {
+            var event = new net.neoforged.neoforge.client.event.GatherEffectScreenTooltipsEvent(screen, effectInst, tooltip);
+            NeoForgeShim.EVENT_BUS.post(event);
+            return event.getTooltip();
+        } catch (Throwable t) {
+            return tooltip;
+        }
     }
 
     // ── Recipe Book Types ─────────────────────────────────
@@ -686,8 +755,14 @@ public class ClientHooks {
     // ── Material Atlases ──────────────────────────────────
 
     public static Map<ResourceLocation, ResourceLocation> gatherMaterialAtlases(Map<ResourceLocation, ResourceLocation> vanillaAtlases) {
-        // NeoForge fires RegisterMaterialAtlasesEvent — no-op, return vanilla
-        return vanillaAtlases;
+        try {
+            var merged = new java.util.HashMap<>(vanillaAtlases);
+            var event = new net.neoforged.neoforge.client.event.RegisterMaterialAtlasesEvent(merged);
+            NeoForgeShim.EVENT_BUS.post(event);
+            return merged;
+        } catch (Throwable t) {
+            return vanillaAtlases;
+        }
     }
 
     // ── Item Model Seams Fix ──────────────────────────────

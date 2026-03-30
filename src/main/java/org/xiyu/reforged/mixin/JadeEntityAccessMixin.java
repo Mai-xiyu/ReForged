@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.Unique;
 @Mixin(Entity.class)
 public abstract class JadeEntityAccessMixin {
 
-    @Shadow
+    @Shadow(remap = false)
     protected abstract Component getTypeName();
 
     /**

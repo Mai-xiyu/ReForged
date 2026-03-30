@@ -1,6 +1,5 @@
 package net.neoforged.neoforge.client;
 
-import com.google.common.collect.ImmutableList;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.Item;
@@ -22,14 +21,12 @@ public final class ItemDecoratorHandler {
     private final List<IItemDecorator> itemDecorators;
 
     private ItemDecoratorHandler(List<IItemDecorator> itemDecorators) {
-        this.itemDecorators = ImmutableList.copyOf(itemDecorators);
+        this.itemDecorators = new java.util.ArrayList<>(itemDecorators);
     }
 
     public static void register(Item item, IItemDecorator decorator) {
         DECORATOR_LOOKUP.computeIfAbsent(item, k -> new ItemDecoratorHandler(List.of()))
-                .itemDecorators.getClass(); // no-op; kept for API compat
-        // Proper multi-decorator support: store via mutable map
-        DECORATOR_LOOKUP.put(item, new ItemDecoratorHandler(List.of(decorator)));
+                .itemDecorators.add(decorator);
     }
 
     /**

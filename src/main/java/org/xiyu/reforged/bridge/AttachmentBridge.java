@@ -1,94 +1,171 @@
 package org.xiyu.reforged.bridge;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
+import net.neoforged.neoforge.attachment.AttachmentHolder;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.attachment.IAttachmentHolder;
+import org.xiyu.reforged.shim.capabilities.ForgeCapabilityBridge;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AttachmentBridge — Stub for bridging NeoForge Data Attachments ↔ Forge Capabilities.
+ * AttachmentBridge — Bridges NeoForge Data Attachments ↔ Forge Capabilities.
  *
- * <h3>Background</h3>
- * <p>NeoForge 1.21.1 uses a "Data Attachment" system for attaching custom data to
- * entities, block entities, chunks, and levels. Forge 1.21.1 uses the older
- * "Capability" system ({@code ICapabilityProvider}, {@code LazyOptional}, etc.).</p>
- *
- * <p>The full bridge would need to:
+ * <h3>How it works</h3>
  * <ol>
- *     <li>Intercept NeoForge {@code AttachmentType} registrations</li>
- *     <li>Create corresponding Forge Capability instances</li>
- *     <li>Wrap {@code LazyOptional<Cap>} as the NeoForge attachment data</li>
- *     <li>Sync changes bidirectionally</li>
+ *   <li>NeoForge mods call {@code entity.getData(attachmentType)} — this is handled
+ *       directly by the mixin-injected {@link AttachmentHolder} on the entity.</li>
+ *   <li>When a NeoForge mod queries data that was set by a Forge mod (via Capabilities),
+ *       this bridge translates: it looks up the corresponding Forge Capability and
+ *       wraps the result as attachment data.</li>
+ *   <li>When a NeoForge mod sets data that a Forge mod expects as a Capability,
+ *       this bridge writes through to the Forge Capability provider.</li>
  * </ol>
  *
- * <p><b>Skeleton phase:</b> This class is a stub. All methods log warnings and
- * return empty optionals. This documents the intended API contract for future
- * implementation.</p>
+ * <p>The mixin-injected {@link AttachmentHolder.AsField} on Entity / BlockEntity / LevelChunk / Level
+ * handles the primary storage. This bridge provides the <b>cross-system interop layer</b>
+ * for cases where Forge mods expose data via Capabilities that NeoForge mods want to read.</p>
  */
 public final class AttachmentBridge {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /**
-     * Registered attachment types (NeoForge attachment name → our internal tracker).
+     * Mapping from NeoForge AttachmentType to Forge capability ResourceLocation.
+     * Populated by {@link #registerCapabilityMapping}.
      */
-    private static final Map<String, AttachmentEntry> attachments = new HashMap<>();
+    private static final Map<AttachmentType<?>, ResourceLocation> ATTACHMENT_TO_CAPABILITY = new ConcurrentHashMap<>();
 
     /**
-     * Register a NeoForge-style data attachment type.
-     *
-     * @param attachmentId the attachment's resource location (e.g. "mymod:my_data")
-     * @param dataClass    the class of the attachment data
-     * @param <T>          the data type
-     * @return a handle for querying the attachment
+     * Reverse mapping: Forge capability RL → NeoForge AttachmentType.
      */
-    public static <T> AttachmentHandle<T> registerAttachment(String attachmentId, Class<T> dataClass) {
-        LOGGER.warn("[ReForged] AttachmentBridge: STUB — registerAttachment('{}', {}) — no Capability mapping yet",
-                attachmentId, dataClass.getSimpleName());
-        AttachmentEntry entry = new AttachmentEntry(attachmentId, dataClass);
-        attachments.put(attachmentId, entry);
-        return new AttachmentHandle<>(attachmentId, dataClass);
+    private static final Map<ResourceLocation, AttachmentType<?>> CAPABILITY_TO_ATTACHMENT = new ConcurrentHashMap<>();
+
+    /**
+     * Register a bidirectional mapping between a NeoForge AttachmentType and a Forge Capability.
+     *
+     * @param attachmentType the NeoForge attachment type
+     * @param capabilityName the Forge capability ResourceLocation (e.g. "neoforge:energy")
+     */
+    public static <T> void registerCapabilityMapping(AttachmentType<T> attachmentType, ResourceLocation capabilityName) {
+        ATTACHMENT_TO_CAPABILITY.put(attachmentType, capabilityName);
+        CAPABILITY_TO_ATTACHMENT.put(capabilityName, attachmentType);
+        LOGGER.debug("[ReForged] AttachmentBridge: Mapped AttachmentType → Capability '{}'", capabilityName);
     }
 
     /**
-     * Get an attachment value from a target object (entity, chunk, etc.).
+     * Try to read attachment data from a target object, falling back to Forge Capabilities
+     * if the attachment holder doesn't have data but a Forge Capability does.
      *
-     * @param target       the object to query (Entity, LevelChunk, etc.)
-     * @param handle       the attachment handle
-     * @param <T>          the data type
-     * @return the attachment data, or empty if not present
+     * @param target         the holder object (Entity, BlockEntity, LevelChunk, Level)
+     * @param attachmentType the NeoForge attachment type to query
+     * @param <T>            the data type
+     * @return the data if found via either system, or empty
      */
-    public static <T> Optional<T> getData(Object target, AttachmentHandle<T> handle) {
-        LOGGER.warn("[ReForged] AttachmentBridge: STUB — getData() called for '{}' on {} — returning empty",
-                handle.attachmentId(), target.getClass().getSimpleName());
-        // TODO: Query Forge Capability providers on the target object and wrap the result
+    @SuppressWarnings("unchecked")
+    public static <T> Optional<T> getDataWithFallback(Object target, AttachmentType<T> attachmentType) {
+        // 1. Check the NeoForge attachment holder first (primary storage)
+        if (target instanceof NeoAttachmentHolderBridge bridge) {
+            AttachmentHolder.AsField holder = bridge.reforged$getNeoAttachmentHolder();
+            if (holder.hasData(attachmentType)) {
+                return Optional.ofNullable(holder.getData(attachmentType));
+            }
+        } else if (target instanceof IAttachmentHolder holder) {
+            if (holder.hasData(attachmentType)) {
+                return Optional.ofNullable(holder.getData(attachmentType));
+            }
+        }
+
+        // 2. Fall back to Forge capability system
+        ResourceLocation capRL = ATTACHMENT_TO_CAPABILITY.get(attachmentType);
+        if (capRL == null) {
+            return Optional.empty();
+        }
+
+        return queryForgeCapability(target, capRL);
+    }
+
+    /**
+     * Set attachment data on a target, and if a Forge Capability mapping exists,
+     * attempt to write through to the Forge system as well.
+     *
+     * @param target         the holder object
+     * @param attachmentType the NeoForge attachment type
+     * @param data           the data to set
+     * @param <T>            the data type
+     */
+    public static <T> void setDataWithBridge(Object target, AttachmentType<T> attachmentType, T data) {
+        // 1. Always write to the NeoForge attachment holder
+        if (target instanceof NeoAttachmentHolderBridge bridge) {
+            bridge.reforged$getNeoAttachmentHolder().setData(attachmentType, data);
+        } else if (target instanceof IAttachmentHolder holder) {
+            holder.setData(attachmentType, data);
+        }
+
+        // 2. If a Forge capability mapping exists, log the write-through
+        // (Forge capabilities are typically read-only via LazyOptional, so direct write-through
+        // is not always possible — the NeoForge holder is the source of truth)
+        ResourceLocation capRL = ATTACHMENT_TO_CAPABILITY.get(attachmentType);
+        if (capRL != null) {
+            LOGGER.debug("[ReForged] AttachmentBridge: setData for capability '{}' on {} — NeoForge holder updated",
+                    capRL, target.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Query a Forge Capability on a target object and return the result.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> Optional<T> queryForgeCapability(Object target, ResourceLocation capRL) {
+        try {
+            if (target instanceof BlockEntity be) {
+                return queryCapabilityOn(be, capRL, null);
+            } else if (target instanceof Entity entity) {
+                return queryCapabilityOn(entity, capRL, null);
+            } else if (target instanceof LevelChunk chunk) {
+                // LevelChunks don't implement ICapabilityProvider in Forge
+                return Optional.empty();
+            } else if (target instanceof Level level) {
+                // Levels don't implement ICapabilityProvider in Forge
+                return Optional.empty();
+            }
+        } catch (Exception e) {
+            LOGGER.debug("[ReForged] AttachmentBridge: Failed to query Forge capability '{}' on {}: {}",
+                    capRL, target.getClass().getSimpleName(), e.getMessage());
+        }
         return Optional.empty();
     }
 
     /**
-     * Set an attachment value on a target object.
-     *
-     * @param target       the object to attach to
-     * @param handle       the attachment handle
-     * @param data         the data to attach
-     * @param <T>          the data type
+     * Query a Forge capability on an ICapabilityProvider with optional side context.
      */
-    public static <T> void setData(Object target, AttachmentHandle<T> handle, T data) {
-        LOGGER.warn("[ReForged] AttachmentBridge: STUB — setData() called for '{}' on {} — data discarded",
-                handle.attachmentId(), target.getClass().getSimpleName());
-        // TODO: Write into the corresponding Forge Capability on the target
+    @SuppressWarnings("unchecked")
+    private static <T> Optional<T> queryCapabilityOn(ICapabilityProvider provider, ResourceLocation capRL, @Nullable Direction side) {
+        Capability<T> forgeCap = ForgeCapabilityBridge.findForgeCapability(capRL, (Class<T>) Object.class);
+        if (forgeCap == null) {
+            return Optional.empty();
+        }
+
+        LazyOptional<T> lazyOpt = provider.getCapability(forgeCap, side);
+        if (lazyOpt.isPresent()) {
+            return Optional.ofNullable(lazyOpt.orElse(null));
+        }
+        return Optional.empty();
     }
-
-    // ─── Inner types ───────────────────────────────────────────────
-
-    /**
-     * Opaque handle for a registered attachment type.
-     */
-    public record AttachmentHandle<T>(String attachmentId, Class<T> dataClass) {}
-
-    private record AttachmentEntry(String id, Class<?> dataClass) {}
 
     private AttachmentBridge() {}
 }

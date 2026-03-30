@@ -6,11 +6,11 @@
 
 [🇨🇳 中文版](./README_CN.md) | 🇬🇧 English
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-green.svg)](https://www.minecraft.net/)
-[![Forge](https://img.shields.io/badge/Forge-52.1.10-orange.svg)](https://files.minecraftforge.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21-green.svg)](https://www.minecraft.net/)
+[![Forge](https://img.shields.io/badge/Forge-51.0.33-orange.svg)](https://files.minecraftforge.net/)
 [![Java](https://img.shields.io/badge/Java-21-blue.svg)](https://www.oracle.com/java/technologies/downloads/)
 
-A compatibility bridge that enables **NeoForge mods** to run seamlessly on **Minecraft Forge 1.21.1** without any modifications.
+A compatibility bridge that enables **NeoForge mods** to run seamlessly on **Minecraft Forge 1.21** without any modifications.
 
 ## 📖 Overview
 
@@ -28,7 +28,7 @@ ReForged is an innovative runtime adapter that bridges the gap between NeoForge 
 - 🎯 **Event Bus Bridging** — Transparent event system compatibility
 - 📦 **Resource Integration** — NeoForge mod assets (textures, models, recipes) automatically available
 - ⚙️ **Automatic Configuration** — Seamless conversion of `neoforge.mods.toml` to Forge format
-- 🎨 **Comprehensive Patching** — 40 Mixin patches for edge case compatibility
+- 🎨 **Comprehensive Patching** — 46 Mixin patches for edge case compatibility
 - 🛠️ **API Shims** — Drop-in replacements for DeferredRegister, CreativeTabs, Attachments, and more
 
 ## 🏗️ Technical Architecture
@@ -60,11 +60,11 @@ Register mod resources as Minecraft resource packs
 | **ReForgedRemapper** | Rewrites NeoForge class references to Forge equivalents |
 | **NeoForgeEventBusAdapter** | Dynamic proxy bridging event bus systems |
 | **Shim Layer** | Drop-in API replacements for NeoForge classes |
-| **Mixin System** | 40 patches for Minecraft/Forge compatibility |
+| **Mixin System** | 46 patches for Minecraft/Forge compatibility |
 
 ## 📦 Installation
 
-1. Install Minecraft **1.21.1** with **Forge 52.1.10** or higher
+1. Install Minecraft **1.21** with **Forge 51.0.33** or higher
 2. Download ReForged mod JAR
 3. Place both ReForged and your NeoForge mods into the `.minecraft/mods/` folder
 4. Launch the game — ReForged will automatically detect and load NeoForge mods
@@ -127,8 +127,8 @@ NeoForge mod JARs are automatically registered as Minecraft resource packs, maki
 
 ## 📋 System Requirements
 
-- **Minecraft:** 1.21.1
-- **Forge:** 52.1.10 or higher
+- **Minecraft:** 1.21
+- **Forge:** 51.0.33 or higher
 - **Java:** 21 or higher
 
 ## 🤝 Compatibility
@@ -156,7 +156,7 @@ The table below outlines the expected compatibility for different types and scal
 | **Network / Payload mods** | Custom payload communication | ✅ Good | `PayloadRegistrar` registration and bidirectional `reply()` implemented |
 | **Client rendering mods** | Custom models, particles, HUD overlays | ⚠️ Partial | Basic model loading (OBJ/JSON), `RenderType` registration, GUI events available; deep BakedModel transforms and custom shaders may need adaptation |
 | **Info / Tooltip mods** | Jade, WTHIT, JEI plugins | ⚠️ Partial | Depends on how deeply the mod relies on NeoForge extension interfaces; Jade has a dedicated Mixin patch |
-| **Large content mods** | Mekanism, Create, etc. | ⚠️ Limited | These mods typically rely heavily on NeoForge-specific capability lookups, rendering pipelines, and multiblock sync — some features may be missing or require extra patches |
+| **Large content mods** | Mekanism, Create, etc. | ⚠️ Partial | DataMap, BiomeModifier codecs, attribute modifier events, RenderBuffers injection, DimensionSpecialEffects injection, GUI layer ordering all implemented; most core features run, some edge paths may need extra patches |
 | **Core / Low-level mods** | Custom ModLoader extensions, ServiceLoader overrides | ❌ Unsupported | Mods that manipulate FML internals or NeoForge bootstrap stages cannot be shimmed |
 
 **Scale Reference:**
@@ -169,41 +169,58 @@ The table below outlines the expected compatibility for different types and scal
 
 ## 📊 Current Progress Snapshot
 
-Latest implementation snapshot, approximate as of 2026-03-10.
+Latest implementation snapshot, approximate as of 2026-03-30.
 
 | Subsystem | Weight | Completion | Weighted Score |
 |-----------|--------|------------|----------------|
-| Mod loading pipeline | 20% | 78% | 15.6 |
-| Event system | 20% | 92% | 18.4 |
-| Registry system | 15% | 88% | 13.2 |
-| Capability system | 10% | 88% | 8.8 |
-| Network / Payload | 8% | 80% | 6.4 |
-| Extension / Common API | 12% | 88% | 10.56 |
-| Client side | 10% | 85% | 8.5 |
-| Mixin coverage | 5% | 55% | 2.75 |
-| **Total** | **100%** |  | **84.2%** |
+| Mod loading pipeline | 20% | 82% | 16.4 |
+| Event system | 20% | 98% | 19.6 |
+| Registry system | 15% | 95% | 14.25 |
+| Capability system | 10% | 95% | 9.5 |
+| Network / Payload | 8% | 82% | 6.56 |
+| Extension / Common API | 12% | 96% | 11.52 |
+| Client side | 10% | 95% | 9.5 |
+| Mixin coverage | 5% | 85% | 4.25 |
+| **Total** | **100%** |  | **~92%** |
 
-### Recent Changes (since 03-09)
+### Recent Changes (03-09 → 03-30)
 
+#### Phase 1 (03-09 → 03-10): Core Event & API Framework
 - **Event system (major)**: Added **60 Forge wrapper constructors** enabling automatic event bridging via `NeoForgeEventBusAdapter`. Covers server lifecycle, entity, living, player, level, village, brewing, enchanting, and grindstone events.
-- **ClientHooks**: Expanded from 18 → **108 methods** with full `ForgeHooksClient` delegation (GUI layers, armor/entity rendering, input events, tooltips, model baking, fog/viewport, sound, screenshots, and more).
-- **EventHooks**: Added ~13 missing methods (`onFarmlandTrample`, `fireFluidPlaceBlockEvent`, `onAlterGround`, `firePlayerRespawnEvent`, `canEntityGrief`, `onEntitySize`, etc.).
-- **CommonHooks**: Added ~14 missing methods (`onLivingConvert`, `onEntityDestroyBlock`, `onPlayerAttack`, `canLivingConvert`, `getEntitySizeForPos`, etc.).
-- **Client event wrappers (~20)**: `RenderPlayerEvent`, `RenderNameTagEvent`, `ClientChatReceivedEvent`, `ClientPauseChangeEvent`, `TextureAtlasStitchedEvent`, `ModelEvent`, `PlaySoundEvent`, `RenderHighlightEvent`, `ScreenEvent`, `ViewportEvent`, and more.
-- **Common event wrappers (~40)**: Server lifecycle events, `EntityLeaveLevel/Mount/MobGriefing`, `LivingDrops/EquipmentChange/AnimalTame`, `LivingEntityUseItem` (4 subs), `AttackEntity/AnvilRepair/ItemFished/CriticalHit`, `AdvancementEvent` (2 subs), `PlayerXpEvent` (3 subs), `ChunkEvent/ChunkWatch/ChunkData`, `CropGrowEvent`, `GrindstoneEvent`, and more.
-- **FMLConstructModEvent**: New lifecycle event wrapper for mod construction phase.
-- **Registry system**: Implemented full DataMap system (`DataMapStorage`, `IRegistryExtension.getDataMap()`, `IWithData.getData()`); `DeferredHolder.is(TagKey)` / `tags()` now resolve via `BuiltInRegistries`; all 4 HolderSetType codecs (ANY/AND/OR/NOT) fully implemented.
-- **Network / Payload**: `ClientPayloadContext.reply()` & `ServerPayloadContext.reply()` now delegate properly.
-- **Extension / Common API**: `CommonHooks.getTagFromVanillaTier()` maps all 6 vanilla Tiers; `FarmlandWaterManager` delegates to Forge; `IBlockEntityExtension.getPersistentData()` per-instance caching; `CompositeHolderSet` with `homogenize()` support.
-- **Client side**: `CompositeRenderable.render()` and `BakedModelRenderable.render()` fully implemented.
-- **Permission**: `PermissionAPI.getRegisteredNodes()` backed by real registry via `PermissionGatherEvent`.
+- **ClientHooks**: Expanded from 18 → **108 methods** with full `ForgeHooksClient` delegation.
+- **EventHooks / CommonHooks**: Added ~27 missing methods.
+- **Client + Common event wrappers (~60)**: Full coverage for rendering, input, lifecycle, entity, chunk events.
+- **Registry system**: Implemented DataMap system, HolderSetType codecs, DeferredHolder tag resolution.
+
+#### Phase 2–4 (03-10 → 03-28): Deep Compatibility & Create/Twilight Forest Support
+- **EntityEvent.Size**: Added `pose`/`oldSize`/`newSize`/`newEyeHeight` fields with getters/setters.
+- **GuiGraphics 9-slice rendering**: New `GuiGraphicsExtensionMixin` implementing `blitWithBorder()` (9-slice) and `blitInscribed()` (aspect-ratio preserving).
+- **CommonHooks.extractLookupProvider**: Multi-field-name retry (3 mapping names) + server fallback.
+- **CommonHooks.tryDispenseShearsHarvestBlock**: Full harvest logic via Forge's `IForgeShearable`.
+- **BiomeModifier codecs**: All 4 types (AddFeatures/RemoveFeatures/AddSpawns/RemoveSpawns) fully implemented with `RecordCodecBuilder` + `RegistryCodecs.homogeneousList()`.
+- **StructureModifier**: `NoneStructureModifier` with real `MapCodec.unit()` codec.
+- **ClientHooks event delegation**: `getDetachedCameraDistance()` fires `CalculateDetachedCameraDistanceEvent`; `onScreenshot()` posts to NeoForge event bus.
+- **DimensionSpecialEffects**: Reflective injection of mod-registered effects into vanilla's static `EFFECTS` map — fixes Twilight Forest sky rendering.
+- **RenderBuffers**: Reflective injection of custom `RenderType` buffers into `BufferSource.fixedBuffers` — fixes Create's custom rendering.
+- **IEntityWithComplexSpawn**: Bridged to Forge's `IEntityAdditionalSpawnData` with `RegistryFriendlyByteBuf ↔ FriendlyByteBuf` default method adapters.
+
+#### Phase 5 (03-28 → 03-30): Final 5% Completion Push
+- **ItemStack attribute modifier hook**: New Mixin injects into both `ItemStack.forEachModifier()` overloads, routing through `IItemStackExtension.getAttributeModifiers()` to fire `ItemAttributeModifierEvent` — fixes Create's dynamic attribute modifications.
+- **DataMap infrastructure**: `RegisterDataMapTypesEvent` fired during `commonSetup`; new `DataMapInitializer` populates built-in DataMaps from vanilla `ComposterBlock.COMPOSTABLES` and `ForgeHooks.getBurnTime()` (compostable values, fuel burn times).
+- **EventHooks event activation**:
+  - `canEntityContinueSleeping()` → fires `CanContinueSleepingEvent` returning event result
+  - `getEnchantmentLevelSpecific()` / `getAllEnchantmentLevels()` → fires `GetEnchantmentLevelEvent` with modifiable enchantment map
+  - `getCustomSpawners()` → fires `ModifyCustomSpawnersEvent` with mutable spawner list
+- **GetEnchantmentLevelEvent**: Upgraded to carry a modifiable `Map<Holder<Enchantment>, Integer>` enchantment map.
+- **ModifyCustomSpawnersEvent**: Upgraded to carry a mutable `List<CustomSpawner>` spawner list.
+- **RegisterGuiLayersEvent ordering fix**: `registerAbove()`/`registerBelow()` now use `ForgeLayeredDraw.addAbove()`/`addBelow()` for correct Z-ordering — fixes Create goggle/schematic overlay display.
 
 ### Notes
 
 - The percentages above are engineering estimates, not formal test pass rates.
-- 766 Java source files total (686 shim + 80 core), 40 Mixin patches, 60 event wrapper constructors.
+- 782 Java source files total (688 shim + 94 core), 46 Mixin patches, 60 event wrapper constructors.
 - Only 4 `UnsupportedOperationException` remain — all intentional by design (e.g. `PartEntity.getAddEntityPacket()`, `ClientCommandSourceStack.getServer()`).
-- The biggest remaining gaps are deeper client rendering/model bake hooks, advanced entity sync, core Mixins (MinecraftMixin, GameRendererMixin), and NeoForge-only vanilla patch behavior.
+- The biggest remaining gaps are advanced entity sync protocols, NeoForge-exclusive deep vanilla patch behavior (e.g. PistonPushReaction extension), and potentially uncovered edge paths in large mods.
 
 ## 📝 Project Structure
 
@@ -233,7 +250,7 @@ All Rights Reserved © 2025-2026 Mai_xiyu
 ## 🙋 Support
 
 If you encounter issues or have questions:
-1. Check if the NeoForge mod is compatible with Forge 1.21.1
+1. Check if the NeoForge mod is compatible with Forge 1.21
 2. Verify Java 21 is installed
 3. Check the game logs for error messages
 4. Open an issue on the GitHub repository

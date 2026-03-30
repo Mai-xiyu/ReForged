@@ -4,7 +4,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.jetbrains.annotations.Nullable;
@@ -39,11 +38,6 @@ public interface AttributeTooltipContext extends Item.TooltipContext {
             @Override
             public MapItemSavedData mapData(MapId id) {
                 return itemCtx.mapData(id);
-            }
-
-            @Override
-            public Level level() {
-                return itemCtx.level();
             }
 
             @Nullable

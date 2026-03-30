@@ -1,9 +1,13 @@
 package net.neoforged.neoforge.common.world;
 
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.RegistryCodecs;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.Biome;
@@ -26,6 +30,13 @@ public final class BiomeModifiers {
             HolderSet<PlacedFeature> features,
             GenerationStep.Decoration step
     ) implements BiomeModifier {
+
+        public static final MapCodec<AddFeaturesBiomeModifier> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
+                RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("biomes").forGetter(AddFeaturesBiomeModifier::biomes),
+                RegistryCodecs.homogeneousList(Registries.PLACED_FEATURE).fieldOf("features").forGetter(AddFeaturesBiomeModifier::features),
+                GenerationStep.Decoration.CODEC.fieldOf("step").forGetter(AddFeaturesBiomeModifier::step)
+        ).apply(inst, AddFeaturesBiomeModifier::new));
+
         @Override
         public void modify(Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
             if (phase == Phase.ADD && biomes.contains(biome)) {
@@ -36,7 +47,7 @@ public final class BiomeModifiers {
 
         @Override
         public MapCodec<? extends BiomeModifier> codec() {
-            return null; // Codec registered via NeoForgeMod DeferredRegister
+            return CODEC;
         }
     }
 
@@ -45,6 +56,16 @@ public final class BiomeModifiers {
             HolderSet<PlacedFeature> features,
             Set<GenerationStep.Decoration> steps
     ) implements BiomeModifier {
+
+        public static final MapCodec<RemoveFeaturesBiomeModifier> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
+                RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("biomes").forGetter(RemoveFeaturesBiomeModifier::biomes),
+                RegistryCodecs.homogeneousList(Registries.PLACED_FEATURE).fieldOf("features").forGetter(RemoveFeaturesBiomeModifier::features),
+                GenerationStep.Decoration.CODEC.listOf().<Set<GenerationStep.Decoration>>xmap(
+                        list -> list.isEmpty() ? EnumSet.noneOf(GenerationStep.Decoration.class) : EnumSet.copyOf(list),
+                        set -> List.copyOf(set)
+                ).fieldOf("steps").forGetter(RemoveFeaturesBiomeModifier::steps)
+        ).apply(inst, RemoveFeaturesBiomeModifier::new));
+
         public static RemoveFeaturesBiomeModifier allSteps(HolderSet<Biome> biomes, HolderSet<PlacedFeature> features) {
             return new RemoveFeaturesBiomeModifier(biomes, features, EnumSet.allOf(GenerationStep.Decoration.class));
         }
@@ -61,7 +82,7 @@ public final class BiomeModifiers {
 
         @Override
         public MapCodec<? extends BiomeModifier> codec() {
-            return null;
+            return CODEC;
         }
     }
 
@@ -69,6 +90,12 @@ public final class BiomeModifiers {
             HolderSet<Biome> biomes,
             List<MobSpawnSettings.SpawnerData> spawners
     ) implements BiomeModifier {
+
+        public static final MapCodec<AddSpawnsBiomeModifier> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
+                RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("biomes").forGetter(AddSpawnsBiomeModifier::biomes),
+                MobSpawnSettings.SpawnerData.CODEC.listOf().fieldOf("spawners").forGetter(AddSpawnsBiomeModifier::spawners)
+        ).apply(inst, AddSpawnsBiomeModifier::new));
+
         public static AddSpawnsBiomeModifier singleSpawn(HolderSet<Biome> biomes, MobSpawnSettings.SpawnerData spawner) {
             return new AddSpawnsBiomeModifier(biomes, List.of(spawner));
         }
@@ -85,7 +112,7 @@ public final class BiomeModifiers {
 
         @Override
         public MapCodec<? extends BiomeModifier> codec() {
-            return null;
+            return CODEC;
         }
     }
 
@@ -93,6 +120,12 @@ public final class BiomeModifiers {
             HolderSet<Biome> biomes,
             HolderSet<EntityType<?>> entityTypes
     ) implements BiomeModifier {
+
+        public static final MapCodec<RemoveSpawnsBiomeModifier> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
+                RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("biomes").forGetter(RemoveSpawnsBiomeModifier::biomes),
+                RegistryCodecs.homogeneousList(Registries.ENTITY_TYPE).fieldOf("entity_types").forGetter(RemoveSpawnsBiomeModifier::entityTypes)
+        ).apply(inst, RemoveSpawnsBiomeModifier::new));
+
         @Override
         public void modify(Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
             if (phase == Phase.REMOVE && biomes.contains(biome)) {
@@ -106,7 +139,7 @@ public final class BiomeModifiers {
 
         @Override
         public MapCodec<? extends BiomeModifier> codec() {
-            return null;
+            return CODEC;
         }
     }
 }

@@ -494,8 +494,16 @@ public class CommonHooks {
 	// ── Dispense UseOnContext ─────────────────────────────
 
 	public static net.minecraft.world.item.context.UseOnContext dispenseUseOnContext(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos, net.minecraft.core.Direction direction, net.minecraft.world.item.ItemStack stack) {
-		// Create a minimal UseOnContext for dispensers — NeoForge-specific
-		return null; // Mods should handle null case
+		// Create a UseOnContext for dispenser use, pointing at the target block face
+		net.minecraft.world.phys.BlockHitResult hitResult = new net.minecraft.world.phys.BlockHitResult(
+				net.minecraft.world.phys.Vec3.atCenterOf(pos), direction.getOpposite(), pos, false);
+		// Use a FakePlayer to provide the required Player context
+		if (level instanceof ServerLevel serverLevel) {
+			net.neoforged.neoforge.common.util.FakePlayer fakePlayer = net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(serverLevel);
+			fakePlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack);
+			return new net.minecraft.world.item.context.UseOnContext(fakePlayer, net.minecraft.world.InteractionHand.MAIN_HAND, hitResult);
+		}
+		return null;
 	}
 
 	// ── Extract Lookup Provider ───────────────────────────
@@ -503,14 +511,34 @@ public class CommonHooks {
 	@Nullable
 	public static net.minecraft.core.HolderLookup.Provider extractLookupProvider(com.mojang.serialization.DynamicOps<?> ops) {
 		if (ops instanceof net.minecraft.resources.RegistryOps<?> registryOps) {
-			try {
-				java.lang.reflect.Field f = net.minecraft.resources.RegistryOps.class.getDeclaredField("lookupProvider");
-				f.setAccessible(true);
-				Object val = f.get(registryOps);
-				if (val instanceof net.minecraft.core.HolderLookup.Provider provider) {
-					return provider;
+			// Try multiple possible field names (mapped/unmapped/intermediary)
+			for (String fieldName : new String[]{"lookupProvider", "registryInfoLookup", "f_256016_"}) {
+				try {
+					java.lang.reflect.Field f = net.minecraft.resources.RegistryOps.class.getDeclaredField(fieldName);
+					f.setAccessible(true);
+					Object val = f.get(registryOps);
+					if (val instanceof net.minecraft.core.HolderLookup.Provider provider) {
+						return provider;
+					}
+					// RegistryOps stores a RegistryInfoLookup, try to adapt it
+					if (val != null) {
+						// Try to get the registryAccess from the current server as fallback
+						var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+						if (server != null) {
+							return server.registryAccess();
+						}
+					}
+				} catch (NoSuchFieldException ignored) {
+					// continue to next field name
+				} catch (Throwable ignored) {
+					break;
 				}
-			} catch (Throwable ignored) {}
+			}
+		}
+		// Fallback: try current server's registry access
+		var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+		if (server != null) {
+			return server.registryAccess();
 		}
 		return null;
 	}
@@ -518,8 +546,9 @@ public class CommonHooks {
 	// ── Sweep Attack ──────────────────────────────────────
 
 	public static boolean fireSweepAttack(net.minecraft.world.entity.player.Player player, net.minecraft.world.entity.Entity target) {
-		// NeoForge fires SweepAttackEvent — delegates to Forge's sweep attack handling
-		return true; // Allow sweep attack by default
+		var event = new net.neoforged.neoforge.event.entity.player.SweepAttackEvent(player, target, true);
+		NeoForge.EVENT_BUS.post(event);
+		return !event.isCanceled() && event.isSweeping();
 	}
 
 	// ── Filtered Recipe Book Types ────────────────────────
@@ -573,7 +602,12 @@ public class CommonHooks {
 	// ── Chunk Unload ──────────────────────────────────────
 
 	public static void onChunkUnload(net.minecraft.world.level.chunk.ChunkAccess chunk) {
-		// NeoForge fires ChunkEvent.Unload — Forge handles this internally
+		// Notify block entities in this chunk so they can clean up caches/capabilities
+		if (chunk instanceof net.minecraft.world.level.chunk.LevelChunk levelChunk) {
+			for (net.minecraft.world.level.block.entity.BlockEntity be : levelChunk.getBlockEntities().values()) {
+				be.onChunkUnloaded();
+			}
+		}
 	}
 
 	// ── Player Enchant Item ───────────────────────────────
@@ -586,13 +620,32 @@ public class CommonHooks {
 
 	@Nullable
 	public static <T> Object resolveLookup(net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<T>> key) {
-		return null; // NeoForge-specific — not available on Forge
+		// Try to resolve from the current server's registry access
+		var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+		if (server != null) {
+			var reg = server.registryAccess().registry(key);
+			return reg.orElse(null);
+		}
+		return null;
 	}
 
 	// ── Shears Harvest Block ──────────────────────────────
 
 	public static boolean tryDispenseShearsHarvestBlock(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos, net.minecraft.world.item.ItemStack stack) {
-		// NeoForge-specific dispenser shears harvesting — return false on Forge
+		// Try to harvest the block using Forge's IForgeShearable system
+		net.minecraft.world.level.block.state.BlockState state = level.getBlockState(pos);
+		net.minecraft.world.level.block.Block block = state.getBlock();
+		if (block instanceof net.minecraftforge.common.IForgeShearable shearable) {
+			if (shearable.isShearable(stack, level, pos)) {
+				java.util.List<net.minecraft.world.item.ItemStack> drops = shearable.onSheared(null, stack, level, pos, 0);
+				for (net.minecraft.world.item.ItemStack drop : drops) {
+					net.minecraft.world.level.block.Block.popResource(level, pos, drop);
+				}
+				level.removeBlock(pos, false);
+				stack.hurtAndBreak(1, level instanceof net.minecraft.server.level.ServerLevel sl ? sl : null, null, (item) -> {});
+				return true;
+			}
+		}
 		return false;
 	}
 }

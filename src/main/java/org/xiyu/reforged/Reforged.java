@@ -11,9 +11,11 @@ import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.xiyu.reforged.core.NeoForgeModLoader;
+import org.xiyu.reforged.core.DataMapInitializer;
 import org.slf4j.Logger;
 
 import java.nio.file.*;
@@ -55,6 +57,7 @@ public class Reforged {
 
         // ── 3. Register event listeners ──────────────────────
         context.getModEventBus().addListener(this::commonSetup);
+        context.getModEventBus().addListener(this::clientSetup);
         context.getModEventBus().addListener(this::onForgeLoadComplete);
         context.getModEventBus().addListener(this::addPackFinders);
 
@@ -65,7 +68,148 @@ public class Reforged {
         net.neoforged.neoforge.attachment.AttachmentInternals.init();
         net.neoforged.neoforge.capabilities.CapabilityHooks.init();
         net.neoforged.neoforge.network.registration.NetworkRegistry.setup();
+        // Fire ModifyDefaultComponentsEvent to NeoForge mods
+        NeoForgeModLoader.dispatchNeoForgeModEvent(new net.neoforged.neoforge.event.ModifyDefaultComponentsEvent());
+        // Fire RegisterDataMapTypesEvent so NeoForge mods can register custom DataMap types
+        NeoForgeModLoader.dispatchNeoForgeModEvent(new net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent());
+        // Populate built-in DataMaps from vanilla/Forge data
+        DataMapInitializer.populateBuiltinDataMaps();
         LOGGER.info("[ReForged] Common setup phase — NeoForge bridge active");
+    }
+
+    @SuppressWarnings("removal")
+    private void clientSetup(final FMLClientSetupEvent event) {
+        LOGGER.info("[ReForged] Client setup phase — firing NeoForge client events");
+        // Fire NeoForge-only client registration events that have no Forge equivalent
+
+        // 1. RegisterDimensionSpecialEffectsEvent (Twilight Forest needs this)
+        net.neoforged.neoforge.client.DimensionSpecialEffectsManager.init();
+
+        // 2. RegisterClientExtensionsEvent (Create/TF need this for custom rendering)
+        NeoForgeModLoader.dispatchNeoForgeModEvent(
+                new net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent());
+
+        // 3. RegisterMenuScreensEvent (Create needs this for 20+ menu screens)
+        try {
+            var screens = new java.util.HashMap<net.minecraft.world.inventory.MenuType<?>,
+                    net.minecraft.client.gui.screens.MenuScreens.ScreenConstructor<?, ?>>();
+            var menuEvent = new net.neoforged.neoforge.client.event.RegisterMenuScreensEvent(screens);
+            NeoForgeModLoader.dispatchNeoForgeModEvent(menuEvent);
+            // Apply the registered screen constructors to Forge's MenuScreens
+            screens.forEach((type, ctor) -> {
+                try {
+                    registerMenuScreenUnchecked(type, ctor);
+                } catch (Throwable t) {
+                    LOGGER.warn("[ReForged] Failed to register menu screen for {}: {}", type, t.getMessage());
+                }
+            });
+            LOGGER.info("[ReForged] Registered {} NeoForge menu screen(s)", screens.size());
+        } catch (Throwable t) {
+            LOGGER.warn("[ReForged] RegisterMenuScreensEvent dispatch failed: {}", t.getMessage());
+        }
+
+        // 4. RegisterNamedRenderTypesEvent (Create uses custom render types)
+        try {
+            var renderTypes = new java.util.HashMap<net.minecraft.resources.ResourceLocation,
+                    net.neoforged.neoforge.client.RenderTypeGroup>();
+            var rtEvent = new net.neoforged.neoforge.client.event.RegisterNamedRenderTypesEvent(renderTypes);
+            NeoForgeModLoader.dispatchNeoForgeModEvent(rtEvent);
+            // Register named render types into Forge's NamedRenderTypeManager via reflection
+            if (!renderTypes.isEmpty()) {
+                try {
+                    var forgeManager = net.minecraftforge.client.NamedRenderTypeManager.class;
+                    java.lang.reflect.Field mapField = null;
+                    for (java.lang.reflect.Field f : forgeManager.getDeclaredFields()) {
+                        if (java.util.Map.class.isAssignableFrom(f.getType())) {
+                            mapField = f;
+                            break;
+                        }
+                    }
+                    if (mapField != null) {
+                        mapField.setAccessible(true);
+                        @SuppressWarnings("unchecked")
+                        var forgeMap = (java.util.Map<net.minecraft.resources.ResourceLocation, Object>) mapField.get(null);
+                        if (forgeMap != null) {
+                            renderTypes.forEach((key, group) -> forgeMap.put(key, group.toForge()));
+                        }
+                    }
+                } catch (Throwable ignored) {}
+                LOGGER.info("[ReForged] Registered {} NeoForge named render type(s)", renderTypes.size());
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("[ReForged] RegisterNamedRenderTypesEvent dispatch failed: {}", t.getMessage());
+        }
+
+        // 5. RegisterRenderBuffersEvent (Create uses custom render buffers)
+        try {
+            var buffers = new java.util.LinkedHashMap<net.minecraft.client.renderer.RenderType,
+                    com.mojang.blaze3d.vertex.ByteBufferBuilder>();
+            var rbEvent = new net.neoforged.neoforge.client.event.RegisterRenderBuffersEvent(buffers);
+            NeoForgeModLoader.dispatchNeoForgeModEvent(rbEvent);
+            if (!buffers.isEmpty()) {
+                // Inject into Minecraft's RenderBuffers.bufferSource().fixedBuffers map
+                try {
+                    var mc = net.minecraft.client.Minecraft.getInstance();
+                    var renderBuffers = mc.renderBuffers();
+                    var bufferSource = renderBuffers.bufferSource();
+                    java.lang.reflect.Field fixedField = net.minecraft.client.renderer.MultiBufferSource.BufferSource.class.getDeclaredField("fixedBuffers");
+                    fixedField.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    var fixedMap = (java.util.SequencedMap<net.minecraft.client.renderer.RenderType, com.mojang.blaze3d.vertex.ByteBufferBuilder>) fixedField.get(bufferSource);
+                    fixedMap.putAll(buffers);
+                    LOGGER.info("[ReForged] Injected {} NeoForge render buffer(s) into BufferSource", buffers.size());
+                } catch (Throwable reflectErr) {
+                    LOGGER.warn("[ReForged] Failed to inject render buffers into BufferSource: {}", reflectErr.getMessage());
+                }
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("[ReForged] RegisterRenderBuffersEvent dispatch failed: {}", t.getMessage());
+        }
+
+        // 6. RegisterItemDecorationsEvent (Create uses item decorators)
+        try {
+            var decorators = new java.util.HashMap<net.minecraft.world.item.Item,
+                    java.util.List<net.neoforged.neoforge.client.IItemDecorator>>();
+            var idEvent = new net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent(decorators);
+            NeoForgeModLoader.dispatchNeoForgeModEvent(idEvent);
+            // Apply to ItemDecoratorHandler
+            decorators.forEach((item, decoList) -> {
+                for (var deco : decoList) {
+                    net.neoforged.neoforge.client.ItemDecoratorHandler.register(item, deco);
+                }
+            });
+            if (!decorators.isEmpty()) {
+                LOGGER.info("[ReForged] Registered {} NeoForge item decoration(s)", decorators.size());
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("[ReForged] RegisterItemDecorationsEvent dispatch failed: {}", t.getMessage());
+        }
+
+        // 7. RegisterDimensionTransitionScreenEvent (TF uses custom transition screens)
+        try {
+            var dtEvent = new net.neoforged.neoforge.client.event.RegisterDimensionTransitionScreenEvent(
+                    net.neoforged.neoforge.client.DimensionTransitionScreenManager.conditionalEffects(),
+                    net.neoforged.neoforge.client.DimensionTransitionScreenManager.incomingEffects(),
+                    net.neoforged.neoforge.client.DimensionTransitionScreenManager.outgoingEffects());
+            NeoForgeModLoader.dispatchNeoForgeModEvent(dtEvent);
+            int total = net.neoforged.neoforge.client.DimensionTransitionScreenManager.conditionalEffects().size()
+                    + net.neoforged.neoforge.client.DimensionTransitionScreenManager.incomingEffects().size()
+                    + net.neoforged.neoforge.client.DimensionTransitionScreenManager.outgoingEffects().size();
+            if (total > 0) {
+                LOGGER.info("[ReForged] Registered {} NeoForge dimension transition screen(s)", total);
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("[ReForged] RegisterDimensionTransitionScreenEvent dispatch failed: {}", t.getMessage());
+        }
+
+        LOGGER.info("[ReForged] Client setup phase complete");
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void registerMenuScreenUnchecked(net.minecraft.world.inventory.MenuType<?> type,
+                                                     net.minecraft.client.gui.screens.MenuScreens.ScreenConstructor<?, ?> ctor) {
+        net.minecraft.client.gui.screens.MenuScreens.register((net.minecraft.world.inventory.MenuType) type,
+                (net.minecraft.client.gui.screens.MenuScreens.ScreenConstructor) ctor);
     }
 
     private void onForgeLoadComplete(final FMLLoadCompleteEvent event) {

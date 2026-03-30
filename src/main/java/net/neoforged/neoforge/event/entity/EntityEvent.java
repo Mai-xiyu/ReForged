@@ -49,7 +49,36 @@ public class EntityEvent extends Event {
     }
 
     public static class Size extends EntityEvent {
+        private net.minecraft.world.entity.Pose pose;
+        private net.minecraft.world.entity.EntityDimensions oldSize;
+        private net.minecraft.world.entity.EntityDimensions newSize;
+        private float newEyeHeight;
+
         public Size() {}
+
         public Size(Entity entity) { super(entity); }
+
+        public Size(Entity entity, net.minecraft.world.entity.Pose pose,
+                    net.minecraft.world.entity.EntityDimensions oldSize,
+                    net.minecraft.world.entity.EntityDimensions newSize) {
+            super(entity);
+            this.pose = pose;
+            this.oldSize = oldSize;
+            this.newSize = newSize;
+            this.newEyeHeight = newSize.eyeHeight();
+        }
+
+        public net.minecraft.world.entity.Pose getPose() { return pose; }
+        public net.minecraft.world.entity.EntityDimensions getOldSize() { return oldSize; }
+        public net.minecraft.world.entity.EntityDimensions getNewSize() { return newSize; }
+        public float getNewEyeHeight() { return newEyeHeight; }
+
+        public void setNewSize(net.minecraft.world.entity.EntityDimensions size) {
+            this.newSize = size;
+        }
+
+        public void setNewEyeHeight(float eyeHeight) {
+            this.newEyeHeight = eyeHeight;
+        }
     }
 }

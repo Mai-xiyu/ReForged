@@ -25,6 +25,22 @@ public abstract class ViewportEvent extends net.neoforged.bus.api.Event {
     public Camera getCamera() { return camera; }
     public double getPartialTick() { return partialTick; }
 
+    /** Fired to allow modification of the field of view. */
+    public static class ComputeFov extends ViewportEvent {
+        private double fov;
+        private final boolean usedConfiguredFov;
+
+        public ComputeFov(GameRenderer renderer, Camera camera, double partialTick, double fov, boolean usedConfiguredFov) {
+            super(renderer, camera, partialTick);
+            this.fov = fov;
+            this.usedConfiguredFov = usedConfiguredFov;
+        }
+
+        public double getFOV() { return fov; }
+        public void setFOV(double fov) { this.fov = fov; }
+        public boolean usedConfiguredFov() { return usedConfiguredFov; }
+    }
+
     /** Fired to allow modification of camera angles (yaw, pitch, roll). */
     public static class ComputeCameraAngles extends ViewportEvent {
         private float yaw;

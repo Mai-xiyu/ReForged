@@ -9,9 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
-import org.xiyu.reforged.shim.capabilities.ForgeCapabilityBridge;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -63,18 +60,8 @@ public final class ItemCapability<T, C extends @Nullable Object> extends BaseCap
             if (ret != null) return ret;
         }
 
-        // 2. Fall back to Forge capability system
-        try {
-            Capability<T> forgeCap = ForgeCapabilityBridge.findForgeCapability(name(), typeClass());
-            if (forgeCap != null) {
-                LazyOptional<T> lazyOpt = stack.getCapability(forgeCap);
-                if (lazyOpt.isPresent()) {
-                    return lazyOpt.orElse(null);
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.debug("[ReForged] ItemCapability Forge fallback failed for {}: {}", name(), e.getMessage());
-        }
+        // Note: Forge 1.21 (51.x) removed capabilities from ItemStack,
+        // so no Forge capability fallback is available for items.
         return null;
     }
 }
