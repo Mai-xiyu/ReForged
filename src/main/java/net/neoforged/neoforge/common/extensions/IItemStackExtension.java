@@ -30,6 +30,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.extensions.IForgeItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.neoforged.neoforge.capabilities.ItemCapability;
 import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.common.ItemAbility;
@@ -93,23 +95,50 @@ public interface IItemStackExtension extends IForgeItemStack {
     }
 
     default boolean shouldCauseBlockBreakReset(ItemStack newStack) {
-        return ((IItemExtension) self().getItem()).shouldCauseBlockBreakReset(self(), newStack);
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.shouldCauseBlockBreakReset(self(), newStack);
+        }
+        // Fallback: inline default logic from IItemExtension
+        if (!newStack.is(item)) return true;
+        if (!newStack.isDamageableItem() || !self().isDamageableItem()) {
+            return !ItemStack.isSameItemSameComponents(newStack, self());
+        }
+        return !ItemStack.isSameItemSameComponents(newStack, self());
     }
 
     default boolean isPrimaryItemFor(Holder<Enchantment> enchantment) {
-        return ((IItemExtension) self().getItem()).isPrimaryItemFor(self(), enchantment);
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.isPrimaryItemFor(self(), enchantment);
+        }
+        if (item == Items.BOOK) return true;
+        java.util.Optional<net.minecraft.core.HolderSet<Item>> primaryItems = enchantment.value().definition().primaryItems();
+        return this.supportsEnchantment(enchantment) && (primaryItems.isEmpty() || self().is(primaryItems.get()));
     }
 
     default boolean supportsEnchantment(Holder<Enchantment> enchantment) {
-        return ((IItemExtension) self().getItem()).supportsEnchantment(self(), enchantment);
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.supportsEnchantment(self(), enchantment);
+        }
+        return self().is(Items.ENCHANTED_BOOK) || enchantment.value().isSupportedItem(self());
     }
 
     default int getEnchantmentLevel(Holder<Enchantment> enchantment) {
-        return ((IItemExtension) self().getItem()).getEnchantmentLevel(self(), enchantment);
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.getEnchantmentLevel(self(), enchantment);
+        }
+        return EnchantmentHelper.getEnchantmentsForCrafting(self()).getLevel(enchantment);
     }
 
     default ItemEnchantments getAllEnchantments(RegistryLookup<Enchantment> lookup) {
-        return ((IItemExtension) self().getItem()).getAllEnchantments(self(), lookup);
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.getAllEnchantments(self(), lookup);
+        }
+        return EnchantmentHelper.getEnchantmentsForCrafting(self());
     }
 
     default int getEnchantmentValue() {
@@ -132,7 +161,11 @@ public interface IItemStackExtension extends IForgeItemStack {
     }
 
     default boolean onEntitySwing(LivingEntity entity, InteractionHand hand) {
-        return ((IItemExtension) self().getItem()).onEntitySwing(self(), entity, hand);
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.onEntitySwing(self(), entity, hand);
+        }
+        return item.onEntitySwing(self(), entity);
     }
 
     default void onStopUsing(LivingEntity entity, int count) {
@@ -148,11 +181,20 @@ public interface IItemStackExtension extends IForgeItemStack {
     }
 
     default float getXpRepairRatio() {
-        return ((IItemExtension) self().getItem()).getXpRepairRatio(self());
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.getXpRepairRatio(self());
+        }
+        return 1f;
     }
 
     default void onAnimalArmorTick(Level level, Mob horse) {
-        ((IItemExtension) self().getItem()).onAnimalArmorTick(self(), level, horse);
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            ext.onAnimalArmorTick(self(), level, horse);
+        } else {
+            item.onHorseArmorTick(self(), level, horse);
+        }
     }
 
     default boolean canEquip(EquipmentSlot armorType, LivingEntity entity) {
@@ -176,7 +218,11 @@ public interface IItemStackExtension extends IForgeItemStack {
     }
 
     default boolean isRepairable() {
-        return ((IItemExtension) self().getItem()).isRepairable(self());
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.isRepairable(self());
+        }
+        return self().isDamageableItem();
     }
 
     default boolean isPiglinCurrency() {
@@ -213,7 +259,11 @@ public interface IItemStackExtension extends IForgeItemStack {
 
     @Nullable
     default FoodProperties getFoodProperties(@Nullable LivingEntity entity) {
-        return ((IItemExtension) self().getItem()).getFoodProperties(self(), entity);
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.getFoodProperties(self(), entity);
+        }
+        return self().get(DataComponents.FOOD);
     }
 
     default boolean isNotReplaceableByPickAction(Player player, int inventorySlot) {
@@ -243,6 +293,10 @@ public interface IItemStackExtension extends IForgeItemStack {
     }
 
     default boolean canFitInsideContainerItems() {
-        return ((IItemExtension) self().getItem()).canFitInsideContainerItems(self());
+        Item item = self().getItem();
+        if (item instanceof IItemExtension ext) {
+            return ext.canFitInsideContainerItems(self());
+        }
+        return item.canFitInsideContainerItems();
     }
 }

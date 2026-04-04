@@ -2,22 +2,37 @@ package org.xiyu.reforged.mixin;
 
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Map;
+
 /**
- * Prevents NPE when an entity has no registered renderer.
- *
- * <p>NeoForge mods may register entity types without properly registering
- * corresponding client-side renderers via Forge's event system. This results
- * in {@code getRenderer()} returning null, causing a crash in
- * {@code shouldRender()}. This mixin returns false for such entities.</p>
+ * Prevents NPE when an entity has no registered renderer,
+ * and injects Create's {@code create$getRenderers()} accessor method.
+ * The accessor interface cast is handled by BytecodeRewriter (INVOKEINTERFACE → INVOKEVIRTUAL).
  */
 @Mixin(EntityRenderDispatcher.class)
 public abstract class EntityRenderDispatcherMixin {
+
+    @Shadow @Final
+    private Map<EntityType<?>, EntityRenderer<?>> renderers;
+
+    /**
+     * Accessor method injected into EntityRenderDispatcher.
+     * Create's code calls this via INVOKEVIRTUAL after BytecodeRewriter transforms
+     * the original INVOKEINTERFACE on EntityRenderDispatcherAccessor.
+     */
+    public Map<EntityType<?>, EntityRenderer<?>> create$getRenderers() {
+        return this.renderers;
+    }
 
     @Inject(
         method = "shouldRender",

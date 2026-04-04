@@ -1,7 +1,9 @@
 package org.xiyu.reforged.shim;
 
 import com.mojang.logging.LogUtils;
+import net.neoforged.bus.api.IEventBus;
 import net.minecraftforge.common.MinecraftForge;
+import org.xiyu.reforged.bridge.NeoForgeEventBusAdapter;
 import org.slf4j.Logger;
 
 /**
@@ -23,7 +25,8 @@ import org.slf4j.Logger;
  * <h3>Our shim provides:</h3>
  * <pre>
  * public class NeoForgeShim {
- *     public static final NeoForgeEventBusShim EVENT_BUS = ...;
+ *     public static final IEventBus EVENT_BUS = ...;
+ *     public static final NeoForgeEventBusShim EVENT_BUS_SHIM = ...;
  * }
  * </pre>
  */
@@ -32,13 +35,15 @@ public final class NeoForgeShim {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /**
-     * The "NeoForge" event bus — actually our bridge that forwards to Forge's bus.
-     *
-     * <p>NeoForge mods call {@code NeoForge.EVENT_BUS.register(this)} at startup.
-     * After rewriting, that becomes {@code NeoForgeShim.EVENT_BUS.register(this)},
-     * which delegates to this shim instance.
+     * Public EVENT_BUS field for rewritten NeoForge mod bytecode.
+        * Descriptor must match NeoForge IEventBus for rewritten NeoForge references.
      */
-    public static final NeoForgeEventBusShim EVENT_BUS = new NeoForgeEventBusShim();
+    public static final IEventBus EVENT_BUS = NeoForgeEventBusAdapter.wrap(MinecraftForge.EVENT_BUS);
+
+    /**
+     * Internal bridge bus used by ReForged's own injections that rely on shim-only helpers.
+     */
+    public static final NeoForgeEventBusShim EVENT_BUS_SHIM = new NeoForgeEventBusShim();
 
     /**
      * Version string exposed by NeoForge — we return our own identifier.

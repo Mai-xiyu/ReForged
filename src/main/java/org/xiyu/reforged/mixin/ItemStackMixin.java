@@ -15,6 +15,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.DataComponentPatch;
 import net.neoforged.neoforge.capabilities.ItemCapability;
 import net.neoforged.neoforge.common.extensions.IItemStackExtension;
 import org.apache.logging.log4j.LogManager;
@@ -91,6 +94,22 @@ public abstract class ItemStackMixin implements IItemStackExtension {
     @Nullable
     public <T> T getCapability(ItemCapability<T, Void> capability) {
         return capability.getCapability(stackSelf(), null);
+    }
+
+    // ── NeoForge getTagEnchantments() ──────────────────────────────────────
+    // NeoForge adds getTagEnchantments() on ItemStack; Forge does not have it.
+    // Create's BacktankUtil.maxAir() calls this to read enchantment levels.
+
+    public ItemEnchantments getTagEnchantments() {
+        return stackSelf().getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+    }
+
+    // ── NeoForge isComponentsPatchEmpty() ──────────────────────────────────
+    // NeoForge adds this convenience method; Forge only has getComponentsPatch().
+    // Create's FilterItemStack.of() calls this.
+
+    public boolean isComponentsPatchEmpty() {
+        return stackSelf().getComponentsPatch().isEmpty();
     }
 
     // ── NeoForge hurtAndBreak(LivingEntity) overload ───────────────────────

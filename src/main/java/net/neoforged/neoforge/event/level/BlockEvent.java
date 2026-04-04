@@ -7,6 +7,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
+import net.neoforged.neoforge.common.util.BlockSnapshot;
 
 /**
  * NeoForge BlockEvent with fields and Forge wrapper constructors.
@@ -68,6 +69,14 @@ public class BlockEvent extends Event {
 
         /** Required by Forge's EventListenerHelper */
         public EntityPlaceEvent() { super(); }
+
+        /** NeoForge-style constructor from BlockSnapshot */
+        public EntityPlaceEvent(BlockSnapshot snapshot, BlockState placedAgainst, Entity entity) {
+            super(snapshot.getLevel(), snapshot.getPos(), snapshot.getBlockState());
+            this.entity = entity;
+            this.placedBlock = snapshot.getBlockState();
+            this.placedAgainst = placedAgainst;
+        }
 
         public EntityPlaceEvent(LevelAccessor level, BlockPos pos, BlockState state,
                                 Entity entity, BlockState placedBlock, BlockState placedAgainst) {

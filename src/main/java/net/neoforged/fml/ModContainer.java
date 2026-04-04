@@ -53,10 +53,12 @@ public class ModContainer {
 
     /**
      * Get the mod info.
-     * Returns NeoForge's IModInfo wrapping the underlying Forge info.
+     * Returns Forge's IModInfo directly since after bytecode remapping,
+     * NeoForge callers expect {@code net.minecraftforge.forgespi.language.IModInfo}
+     * as the return type (neoforgespi → forgespi remapping).
      */
-    public net.neoforged.neoforgespi.language.IModInfo getModInfo() {
-        return net.neoforged.neoforgespi.language.IModInfo.wrap(delegate.getModInfo());
+    public net.minecraftforge.forgespi.language.IModInfo getModInfo() {
+        return delegate.getModInfo();
     }
 
     /**
@@ -93,13 +95,57 @@ public class ModContainer {
     }
 
     /**
-     * Register an extension point with this mod container.
+     * Overload accepting Forge types directly — bytecode-remapped NeoForge mods
+     * may call registerConfig with Forge-typed parameters after class remapping.
+     */
+    public void registerConfig(net.minecraftforge.fml.config.ModConfig.Type forgeType,
+                               net.minecraftforge.fml.config.IConfigSpec<?> spec) {
+        net.minecraftforge.common.ForgeConfigSpec forgeSpec = toForgeConfigSpecFromForge(spec);
+        if (forgeSpec != null) {
+            delegate.addConfig(new net.minecraftforge.fml.config.ModConfig(forgeType, forgeSpec, delegate));
+        }
+    }
+
+    /**
+     * Overload with filename, accepting Forge types directly.
+     */
+    public void registerConfig(net.minecraftforge.fml.config.ModConfig.Type forgeType,
+                               net.minecraftforge.fml.config.IConfigSpec<?> spec, String fileName) {
+        net.minecraftforge.common.ForgeConfigSpec forgeSpec = toForgeConfigSpecFromForge(spec);
+        if (forgeSpec != null) {
+            delegate.addConfig(new net.minecraftforge.fml.config.ModConfig(forgeType, forgeSpec, delegate, fileName));
+        }
+    }
+
+    /**
+     * Register an extension point with this mod container (NeoForge typed).
      * Bridges NeoForge's IConfigScreenFactory to Forge's ConfigScreenHandler.
      */
     @SuppressWarnings("unchecked")
     public <T extends IExtensionPoint> void registerExtensionPoint(Class<T> point, T extension) {
-        bridgeConfigScreenFactory(extension);
+        registerExtensionPointDynamic(point, extension);
     }
+
+    /**
+     * Register an extension point with a Supplier (NeoForge typed).
+     * Some NeoForge mods use the Supplier variant.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends IExtensionPoint> void registerExtensionPoint(Class<T> point, java.util.function.Supplier<T> supplier) {
+        registerExtensionPointDynamic(point, supplier.get());
+    }
+
+    /**
+     * Register an extension point with Forge-typed parameter.
+     * After bytecode remapping, NeoForge IExtensionPoint becomes Forge IExtensionPoint.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends net.minecraftforge.fml.IExtensionPoint> void registerExtensionPoint(Class<T> point, T extension) {
+        registerExtensionPointDynamic(point, extension);
+    }
+
+    // Note: Forge-typed Supplier overload omitted — same erasure as NeoForge-typed Supplier overload.
+    // The NeoForge-typed version handles both cases since callers use net.neoforged.fml.IExtensionPoint.
 
     /**
      * Dynamic extension point registration for cross-classloader objects.
@@ -249,6 +295,34 @@ public class ModContainer {
 
         org.slf4j.LoggerFactory.getLogger(ModContainer.class).warn(
                 "[ReForged] Unsupported NeoForge IConfigSpec implementation for mod '{}': {}",
+                getModId(), spec.getClass().getName());
+        return null;
+    }
+
+    /**
+     * Extract ForgeConfigSpec from Forge's own IConfigSpec (used by Forge-typed overloads).
+     */
+    private net.minecraftforge.common.ForgeConfigSpec toForgeConfigSpecFromForge(net.minecraftforge.fml.config.IConfigSpec<?> spec) {
+        if (spec == null) {
+            return null;
+        }
+        if (spec instanceof net.minecraftforge.common.ForgeConfigSpec fcs) {
+            return fcs;
+        }
+        // ModConfigSpec now implements Forge's IConfigSpec
+        if (spec instanceof net.neoforged.neoforge.common.ModConfigSpec mcs) {
+            return mcs.getForgeSpec();
+        }
+        // Reflection fallback
+        try {
+            java.lang.reflect.Method method = spec.getClass().getMethod("getForgeSpec");
+            Object value = method.invoke(spec);
+            if (value instanceof net.minecraftforge.common.ForgeConfigSpec fcs) {
+                return fcs;
+            }
+        } catch (Throwable ignored) {}
+        org.slf4j.LoggerFactory.getLogger(ModContainer.class).warn(
+                "[ReForged] Unsupported Forge IConfigSpec implementation for mod '{}': {}",
                 getModId(), spec.getClass().getName());
         return null;
     }

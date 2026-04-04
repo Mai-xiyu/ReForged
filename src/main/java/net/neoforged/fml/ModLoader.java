@@ -1,6 +1,7 @@
 package net.neoforged.fml;
 
 import com.mojang.logging.LogUtils;
+import org.xiyu.reforged.bridge.NeoForgeEventBusAdapter;
 import org.slf4j.Logger;
 
 import java.util.Collections;
@@ -46,17 +47,28 @@ public final class ModLoader {
     }
 
     /**
-     * Post an event to the mod event bus. No-op in ReForged bridge — events are
-     * bridged through the NeoForge event adapter, not through this class.
+     * Post an event to the mod event bus. Dispatches to fallback listeners
+     * registered via NeoForgeEventBusAdapter for events that Forge's bus can't handle.
      */
     public static void postEvent(Object event) {
-        LOGGER.debug("[ReForged] ModLoader.postEvent (no-op): {}", event.getClass().getSimpleName());
+        LOGGER.info("[ReForged] ModLoader.postEvent: {}", event.getClass().getSimpleName());
+        NeoForgeEventBusAdapter.dispatchFallback(event);
     }
 
     /**
-     * Post an event wrapping each mod container. No-op stub.
+     * Overload matching NeoForge's exact signature: postEvent(net.neoforged.bus.api.Event).
+     * Flywheel's mixin bytecode calls this exact descriptor.
+     */
+    public static void postEvent(net.neoforged.bus.api.Event event) {
+        LOGGER.info("[ReForged] ModLoader.postEvent(Event): {}", event.getClass().getSimpleName());
+        NeoForgeEventBusAdapter.dispatchFallback(event);
+    }
+
+    /**
+     * Post an event wrapping each mod container. Dispatches same as postEvent.
      */
     public static void postEventWrapContainerInModOrder(Object event) {
-        LOGGER.debug("[ReForged] ModLoader.postEventWrapContainerInModOrder (no-op): {}", event.getClass().getSimpleName());
+        LOGGER.info("[ReForged] ModLoader.postEventWrapContainerInModOrder: {}", event.getClass().getSimpleName());
+        NeoForgeEventBusAdapter.dispatchFallback(event);
     }
 }

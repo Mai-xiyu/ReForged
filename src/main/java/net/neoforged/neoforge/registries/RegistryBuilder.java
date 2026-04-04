@@ -30,6 +30,7 @@ public class RegistryBuilder<T> {
     private boolean sync;
     private int maxId = Integer.MAX_VALUE - 1;
     private ResourceLocation defaultKey;
+    private boolean intrusiveHolders;
 
     public RegistryBuilder() {}
 
@@ -87,9 +88,9 @@ public class RegistryBuilder<T> {
         return this;
     }
 
-    /** NeoForge: use intrusive holders for this registry. No-op in shim. */
-    @Deprecated
+    /** NeoForge: use intrusive holders for this registry. */
     public RegistryBuilder<T> withIntrusiveHolders() {
+        this.intrusiveHolders = true;
         return this;
     }
 
@@ -119,7 +120,7 @@ public class RegistryBuilder<T> {
                     ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("reforged", "unknown"));
         }
         LOGGER.debug("[ReForged] Building shim registry for key: {}", registryKey.location());
-        MappedRegistry<T> registry = new MappedRegistry<>((ResourceKey<Registry<T>>) registryKey, Lifecycle.stable());
+        MappedRegistry<T> registry = new MappedRegistry<>((ResourceKey<Registry<T>>) registryKey, Lifecycle.stable(), intrusiveHolders);
 
         // Register the custom registry in the root registry so lookups work.
         // The root registry is likely frozen by this point, so we unfreeze temporarily.

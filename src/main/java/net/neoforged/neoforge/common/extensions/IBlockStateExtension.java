@@ -12,6 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.SignalGetter;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -33,20 +34,37 @@ public interface IBlockStateExtension extends IForgeBlockState {
     }
 
     default boolean hasDynamicLightEmission() {
-        return ((IBlockExtension) self().getBlock()).hasDynamicLightEmission(self());
+        var block = self().getBlock();
+        if (block instanceof IBlockExtension ext) {
+            return ext.hasDynamicLightEmission(self());
+        }
+        return false;
     }
 
     default boolean ignitedByLava(BlockGetter level, BlockPos pos, Direction face) {
-        return ((IBlockExtension) self().getBlock()).ignitedByLava(self(), level, pos, face);
+        var block = self().getBlock();
+        if (block instanceof IBlockExtension ext) {
+            return ext.ignitedByLava(self(), level, pos, face);
+        }
+        return self().ignitedByLava();
     }
 
     default void onDestroyedByPushReaction(Level level, BlockPos pos, Direction pushDirection, FluidState fluid) {
-        ((IBlockExtension) self().getBlock()).onDestroyedByPushReaction(self(), level, pos, pushDirection, fluid);
+        var block = self().getBlock();
+        if (block instanceof IBlockExtension ext) {
+            ext.onDestroyedByPushReaction(self(), level, pos, pushDirection, fluid);
+        } else {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        }
     }
 
     @Nullable
     default BlockState getToolModifiedState(UseOnContext context, ItemAbility itemAbility, boolean simulate) {
-        return ((IBlockExtension) self().getBlock()).getToolModifiedState(self(), context, itemAbility, simulate);
+        var block = self().getBlock();
+        if (block instanceof IBlockExtension ext) {
+            return ext.getToolModifiedState(self(), context, itemAbility, simulate);
+        }
+        return null;
     }
 
     default boolean canRedstoneConnectTo(BlockGetter level, BlockPos pos, @Nullable Direction direction) {
@@ -70,14 +88,28 @@ public interface IBlockStateExtension extends IForgeBlockState {
     }
 
     default boolean isEmpty() {
-        return ((IBlockExtension) self().getBlock()).isEmpty(self());
+        var block = self().getBlock();
+        if (block instanceof IBlockExtension ext) {
+            return ext.isEmpty(self());
+        }
+        return self().is(Blocks.AIR) || self().is(Blocks.CAVE_AIR) || self().is(Blocks.VOID_AIR);
     }
 
     default BubbleColumnDirection getBubbleColumnDirection() {
-        return ((IBlockExtension) self().getBlock()).getBubbleColumnDirection(self());
+        var block = self().getBlock();
+        if (block instanceof IBlockExtension ext) {
+            return ext.getBubbleColumnDirection(self());
+        }
+        if (self().is(Blocks.SOUL_SAND)) return BubbleColumnDirection.UPWARD;
+        if (self().is(Blocks.MAGMA_BLOCK)) return BubbleColumnDirection.DOWNWARD;
+        return BubbleColumnDirection.NONE;
     }
 
     default boolean shouldHideAdjacentFluidFace(Direction selfFace, FluidState adjacentFluid) {
-        return ((IBlockExtension) self().getBlock()).shouldHideAdjacentFluidFace(self(), selfFace, adjacentFluid);
+        var block = self().getBlock();
+        if (block instanceof IBlockExtension ext) {
+            return ext.shouldHideAdjacentFluidFace(self(), selfFace, adjacentFluid);
+        }
+        return self().getFluidState().getType().isSame(adjacentFluid.getType());
     }
 }

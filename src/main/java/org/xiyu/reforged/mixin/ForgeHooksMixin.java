@@ -25,8 +25,8 @@ import java.util.Map;
  * this mixin injects additional logic to fire the NeoForge equivalents so that NeoForge mods
  * (e.g., Twilight Forest) can register their entity attributes.</p>
  *
- * <p>Because NeoForge's Event base class extends Forge's Event, these events can be posted
- * directly on the Forge mod event bus.</p>
+ * <p>Dispatch is routed through an untyped helper to avoid verifier issues at synthetic
+ * mixin call-sites during bootstrap.</p>
  */
 @Mixin(value = ForgeHooks.class, remap = false)
 public class ForgeHooksMixin {
@@ -82,11 +82,10 @@ public class ForgeHooksMixin {
      * Dispatch a NeoForge event to the Forge mod event bus via NeoForgeModLoader.
      * Uses reflection to avoid hard dependency from the mixin target's classloader scope.
      */
-    private static void dispatchToNeoForgeModBus(net.minecraftforge.eventbus.api.Event neoEvent) {
+    private static void dispatchToNeoForgeModBus(Object neoEvent) {
         try {
             Class<?> neoModLoader = Class.forName("org.xiyu.reforged.core.NeoForgeModLoader");
-            Method dispatch = neoModLoader.getMethod("dispatchNeoForgeModEvent",
-                    net.minecraftforge.eventbus.api.Event.class);
+            Method dispatch = neoModLoader.getMethod("dispatchNeoForgeModEventUntyped", Object.class);
             dispatch.invoke(null, neoEvent);
         } catch (Throwable t) {
             REFORGED_LOGGER.warn("[ReForged] Could not dispatch event via NeoForgeModLoader: {}", t.getMessage());

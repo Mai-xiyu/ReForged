@@ -2,15 +2,20 @@ package org.xiyu.reforged.mixin;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.neoforged.neoforge.client.ClientHooks;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
-import org.xiyu.reforged.shim.NeoForgeEventBusShim;
+import org.xiyu.reforged.bridge.FlywheelRenderBridge;
 import org.xiyu.reforged.shim.NeoForgeShim;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.Optional;
 
 /**
  * Injects NeoForge lifecycle events into Minecraft's main loop.
@@ -28,6 +33,12 @@ public abstract class MinecraftMixin {
     @Shadow(remap = false)
     private DeltaTracker.Timer timer;
 
+    @Shadow @Final
+    private ReloadableResourceManager resourceManager;
+
+    @Unique
+    private boolean reforged$flywheelInitialReloadFired = false;
+
     /**
      * Fire RenderFrameEvent.Pre before the game renderer processes a frame.
      * Injected at the start of the render call in runTick().
@@ -42,7 +53,7 @@ public abstract class MinecraftMixin {
     )
     private void reforged$onRenderFramePre(boolean renderLevel, CallbackInfo ci) {
         try {
-            NeoForgeShim.EVENT_BUS.post(new RenderFrameEvent.Pre(this.timer));
+            NeoForgeShim.EVENT_BUS_SHIM.postUntyped(new RenderFrameEvent.Pre(this.timer));
         } catch (Throwable ignored) {
             // Don't crash the game if event dispatch fails
         }
@@ -63,9 +74,32 @@ public abstract class MinecraftMixin {
     )
     private void reforged$onRenderFramePost(boolean renderLevel, CallbackInfo ci) {
         try {
-            NeoForgeShim.EVENT_BUS.post(new RenderFrameEvent.Post(this.timer));
+            NeoForgeShim.EVENT_BUS_SHIM.postUntyped(new RenderFrameEvent.Post(this.timer));
         } catch (Throwable ignored) {
             // Don't crash the game if event dispatch fails
+        }
+    }
+
+    // =====================================================================
+    // Flywheel rendering bridge: fire EndClientResourceReloadEvent
+    // =====================================================================
+
+    /**
+     * After initial game load finishes (resources loaded, screens built),
+     * fire Flywheel's EndClientResourceReloadEvent to initialize its rendering backend.
+     */
+    @Inject(method = "onGameLoadFinished", at = @At("HEAD"), remap = false)
+    private void reforged$flywheelOnGameLoadFinished(@Coerce Object gameLoadCookie, CallbackInfo ci) {
+        if (reforged$flywheelInitialReloadFired) return;
+        reforged$flywheelInitialReloadFired = true;
+        try {
+            FlywheelRenderBridge.freezeRegistries();
+            FlywheelRenderBridge.fireEndClientResourceReloadEvent(
+                    (Minecraft) (Object) this,
+                    this.resourceManager,
+                    true,
+                    Optional.empty());
+        } catch (Throwable ignored) {
         }
     }
 }

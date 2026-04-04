@@ -2,6 +2,7 @@ package net.neoforged.neoforge.event;
 
 import java.util.LinkedHashSet;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureFlagSet;
@@ -20,6 +21,7 @@ public final class BuildCreativeModeTabContentsEvent extends Event implements IM
     private final LinkedHashSet<ItemStack> parentEntries;
     private final LinkedHashSet<ItemStack> searchEntries;
     private final ResourceKey<CreativeModeTab> tabKey;
+    private final net.minecraftforge.event.BuildCreativeModeTabContentsEvent forgeEvent;
 
     public BuildCreativeModeTabContentsEvent(CreativeModeTab tab, ResourceKey<CreativeModeTab> tabKey,
                                               CreativeModeTab.ItemDisplayParameters parameters,
@@ -30,6 +32,32 @@ public final class BuildCreativeModeTabContentsEvent extends Event implements IM
         this.parameters = parameters;
         this.parentEntries = parentEntries;
         this.searchEntries = searchEntries;
+        this.forgeEvent = null;
+    }
+
+    /**
+     * Bridge constructor used by ReForged's event-bus adapter to wrap Forge's
+     * BuildCreativeModeTabContentsEvent into a NeoForge-compatible event object.
+     */
+    public BuildCreativeModeTabContentsEvent(net.minecraftforge.event.BuildCreativeModeTabContentsEvent forgeEvent) {
+        this.tab = forgeEvent.getTab();
+        this.tabKey = forgeEvent.getTabKey();
+        this.parameters = forgeEvent.getParameters();
+        this.parentEntries = new LinkedHashSet<>();
+        this.searchEntries = new LinkedHashSet<>();
+        this.forgeEvent = forgeEvent;
+
+        // Mirror current entries so NeoForge listeners see a coherent snapshot.
+        for (Map.Entry<?, ?> entry : forgeEvent.getEntries()) {
+            ItemStack stack = (ItemStack) entry.getKey();
+            CreativeModeTab.TabVisibility visibility = (CreativeModeTab.TabVisibility) entry.getValue();
+            if (isParentTab(visibility)) {
+                this.parentEntries.add(stack);
+            }
+            if (isSearchTab(visibility)) {
+                this.searchEntries.add(stack);
+            }
+        }
     }
 
     public CreativeModeTab getTab() {
@@ -62,6 +90,10 @@ public final class BuildCreativeModeTabContentsEvent extends Event implements IM
 
     @Override
     public void accept(ItemStack newEntry, CreativeModeTab.TabVisibility visibility) {
+        if (forgeEvent != null) {
+            // Keep Forge's backing map authoritative so tab contents are actually populated.
+            forgeEvent.accept(newEntry, visibility);
+        }
         if (isParentTab(visibility)) {
             parentEntries.add(newEntry);
         }

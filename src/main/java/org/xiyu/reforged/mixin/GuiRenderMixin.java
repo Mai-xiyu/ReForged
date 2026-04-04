@@ -3,23 +3,43 @@ package org.xiyu.reforged.mixin;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.client.gui.LayeredDraw;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import org.xiyu.reforged.shim.NeoForgeShim;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Injects RenderGuiEvent.Pre / Post firing into Gui.render().
- * <p>
- * Forge 1.21.1 removed RenderGuiEvent entirely (it was in the now-commented-out ForgeGui),
- * but NeoForge mods like Jade still listen for RenderGuiEvent.Post to render their HUD overlays.
- * This Mixin fires those events synthetically so NeoForge mods can render overlays.
- * </p>
+ * Injects into Gui.render() to:
+ * <ul>
+ *   <li>Apply deferred NeoForge GUI layers (from {@link RegisterGuiLayersEvent}) on first render</li>
+ *   <li>Fire {@link RenderGuiEvent.Post} so NeoForge mods like Jade can render HUD overlays</li>
+ * </ul>
  */
 @Mixin(Gui.class)
 public class GuiRenderMixin {
+
+    @Shadow @Final private LayeredDraw layers;
+
+    @Unique
+    private boolean reforged$layersApplied = false;
+
+    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V", at = @At("HEAD"), remap = false)
+    private void reforged$applyNeoForgeLayers(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        if (!reforged$layersApplied) {
+            reforged$layersApplied = true;
+            RegisterGuiLayersEvent event = RegisterGuiLayersEvent.getInstance();
+            if (event != null) {
+                event.applyTo(this.layers);
+            }
+        }
+    }
 
     /**
      * Fire RenderGuiEvent.Post after all GUI layers have been rendered.
@@ -27,6 +47,6 @@ public class GuiRenderMixin {
      */
     @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V", at = @At("RETURN"), remap = false)
     private void reforged$onRenderGuiPost(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-        MinecraftForge.EVENT_BUS.post(new RenderGuiEvent.Post(guiGraphics, deltaTracker));
+        NeoForgeShim.EVENT_BUS_SHIM.postUntyped(new RenderGuiEvent.Post(guiGraphics, deltaTracker));
     }
 }

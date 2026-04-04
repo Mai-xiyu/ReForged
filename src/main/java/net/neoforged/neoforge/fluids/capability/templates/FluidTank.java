@@ -1,5 +1,11 @@
 package net.neoforged.neoforge.fluids.capability.templates;
 
+import com.mojang.serialization.DataResult;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.RegistryOps;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -139,5 +145,29 @@ public class FluidTank implements IFluidTank, IFluidHandler {
 
     public void setFluid(FluidStack stack) {
         this.fluid = stack;
+    }
+
+    public CompoundTag writeToNBT(HolderLookup.Provider registries, CompoundTag nbt) {
+        if (!fluid.isEmpty()) {
+            RegistryOps<Tag> ops = registries.createSerializationContext(NbtOps.INSTANCE);
+            DataResult<Tag> result = FluidStack.CODEC.encodeStart(ops, fluid);
+            result.result().ifPresent(tag -> nbt.put("fluid", tag));
+        }
+        nbt.putInt("capacity", capacity);
+        return nbt;
+    }
+
+    public FluidTank readFromNBT(HolderLookup.Provider registries, CompoundTag nbt) {
+        if (nbt.contains("fluid")) {
+            RegistryOps<Tag> ops = registries.createSerializationContext(NbtOps.INSTANCE);
+            DataResult<FluidStack> result = FluidStack.CODEC.parse(ops, nbt.getCompound("fluid"));
+            fluid = result.result().orElse(FluidStack.EMPTY);
+        } else {
+            fluid = FluidStack.EMPTY;
+        }
+        if (nbt.contains("capacity")) {
+            capacity = nbt.getInt("capacity");
+        }
+        return this;
     }
 }

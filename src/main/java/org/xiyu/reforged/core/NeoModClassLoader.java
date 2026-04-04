@@ -1,6 +1,7 @@
 package org.xiyu.reforged.core;
 
 import com.mojang.logging.LogUtils;
+import org.xiyu.reforged.asm.BytecodeRewriter;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
@@ -31,11 +32,14 @@ public final class NeoModClassLoader {
      * Create a URLClassLoader for the NeoForge mod JARs.
      * Parent is the given classloader (game + Forge + ReForged).
      *
-     * @param jars        list of NeoForge mod JAR paths
-     * @param parentLoader the parent classloader (typically the game classloader)
+     * @param jars             list of NeoForge mod JAR paths
+     * @param parentLoader     the parent classloader (typically the game classloader)
+     * @param extractedJiJJars if non-null, extracted Jar-in-Jar paths will be added to this list
+     *                         so callers can scan them for @Mod classes
      * @return the classloader, or null on failure
      */
-    public static URLClassLoader createClassLoader(List<Path> jars, ClassLoader parentLoader) {
+    public static URLClassLoader createClassLoader(List<Path> jars, ClassLoader parentLoader,
+                                                    List<Path> extractedJiJJars) {
         try {
             List<URL> urls = new ArrayList<>();
             // Add top-level mod JARs
@@ -60,6 +64,9 @@ public final class NeoModClassLoader {
                             }
                             extracted.toFile().deleteOnExit();
                             urls.add(extracted.toUri().toURL());
+                            if (extractedJiJJars != null) {
+                                extractedJiJJars.add(extracted);
+                            }
                             LOGGER.info("[ReForged] Extracted JiJ dependency: {} from {}", fileName, jar.getFileName());
                         }
                     }
@@ -75,6 +82,8 @@ public final class NeoModClassLoader {
             // classloader identity mismatch that breaks constructor injection.
             return new URLClassLoader(urls.toArray(new URL[0]), parentLoader) {
 
+                private final BytecodeRewriter bytecodeRewriter = new BytecodeRewriter();
+
                 // Packages that must always be loaded from the parent classloader
                 private static final String[] PARENT_FIRST_PREFIXES = {
                     "java.", "jdk.", "sun.", "javax.",               // JDK
@@ -88,6 +97,9 @@ public final class NeoModClassLoader {
                     "com.google.", "org.apache.commons.",            // Common libs
                     "io.netty.", "it.unimi.dsi.",                    // Netty & fastutil
                     "org.spongepowered.",                            // Mixin
+                    "dev.engine_room.flywheel.impl.extension.",      // Flywheel PoseStackExtension
+                    "dev.engine_room.flywheel.lib.transform.",       // Flywheel transform interfaces
+                    "net.createmod.ponder.mixin.",                   // Ponder mixin accessor interfaces
                 };
 
                 // Specific classes that must be loaded from parent to maintain type identity
@@ -135,7 +147,20 @@ public final class NeoModClassLoader {
                 @Override
                 protected Class<?> findClass(String name) throws ClassNotFoundException {
                     Thread.currentThread().setContextClassLoader(this);
-                    return super.findClass(name);
+
+                    String resourceName = name.replace('.', '/').concat(".class");
+                    URL resource = findResource(resourceName);
+                    if (resource == null) {
+                        throw new ClassNotFoundException(name);
+                    }
+
+                    try (InputStream is = resource.openStream()) {
+                        byte[] original = is.readAllBytes();
+                        byte[] rewritten = bytecodeRewriter.rewrite(original);
+                        return defineClass(name, rewritten, 0, rewritten.length);
+                    } catch (Exception e) {
+                        throw new ClassNotFoundException(name, e);
+                    }
                 }
             };
         } catch (Exception e) {

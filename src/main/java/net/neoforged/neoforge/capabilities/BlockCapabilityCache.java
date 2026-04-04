@@ -103,7 +103,11 @@ public final class BlockCapabilityCache<T, C extends @Nullable Object> {
             if (!level.isLoaded(pos)) {
                 cachedCap = null;
             } else {
-                cachedCap = ((ILevelExtension) level).getCapability(capability, pos, context);
+                if (level instanceof ILevelExtension ext) {
+                    cachedCap = ext.getCapability(capability, pos, context);
+                } else {
+                    cachedCap = null;
+                }
             }
             cacheValid = true;
         }

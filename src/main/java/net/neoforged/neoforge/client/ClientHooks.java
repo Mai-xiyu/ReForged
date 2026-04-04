@@ -547,9 +547,11 @@ public class ClientHooks {
     @Nullable
     public static Component onClientSystemChat(Component message, boolean overlay) {
         // Forge 51 (1.21): onClientSystemChat(Component, boolean, RegistryAccess)
+        // MC 1.21 does not expose RegistryAccess.EMPTY; when no world is loaded,
+        // pass null as a safe fallback (Forge 51 currently does not dereference it).
         RegistryAccess registryAccess = Minecraft.getInstance().level != null
-                ? Minecraft.getInstance().level.registryAccess()
-                : RegistryAccess.EMPTY;
+            ? Minecraft.getInstance().level.registryAccess()
+            : null;
         return ForgeHooksClient.onClientSystemChat(message, overlay, registryAccess);
     }
 

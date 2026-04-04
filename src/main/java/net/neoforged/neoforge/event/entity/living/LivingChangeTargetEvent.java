@@ -12,17 +12,21 @@ public class LivingChangeTargetEvent extends net.neoforged.bus.api.Event impleme
     private final LivingEntity entity;
     @Nullable
     private LivingEntity newTarget;
+    @Nullable
+    private final LivingEntity originalTarget;
     private final ILivingTargetType targetType;
 
     public LivingChangeTargetEvent() {
         this.entity = null;
         this.newTarget = null;
+        this.originalTarget = null;
         this.targetType = ILivingTargetType.MOB_TARGET;
     }
 
     public LivingChangeTargetEvent(LivingEntity entity, @Nullable LivingEntity newTarget, ILivingTargetType targetType) {
         this.entity = entity;
         this.newTarget = newTarget;
+        this.originalTarget = newTarget;
         this.targetType = targetType;
     }
 
@@ -30,6 +34,7 @@ public class LivingChangeTargetEvent extends net.neoforged.bus.api.Event impleme
     public LivingChangeTargetEvent(net.minecraftforge.event.entity.living.LivingChangeTargetEvent forge) {
         this.entity = forge.getEntity();
         this.newTarget = forge.getNewTarget();
+        this.originalTarget = forge.getNewTarget();
         this.targetType = ILivingTargetType.MOB_TARGET;
     }
 
@@ -37,6 +42,9 @@ public class LivingChangeTargetEvent extends net.neoforged.bus.api.Event impleme
 
     @Nullable
     public LivingEntity getNewTarget() { return newTarget; }
+
+    @Nullable
+    public LivingEntity getOriginalAboutToBeSetTarget() { return originalTarget; }
 
     public void setNewTarget(@Nullable LivingEntity newTarget) { this.newTarget = newTarget; }
 

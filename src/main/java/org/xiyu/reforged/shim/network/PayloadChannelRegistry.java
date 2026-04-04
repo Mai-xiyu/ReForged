@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class PayloadChannelRegistry {
 
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final boolean JADE_DIAGNOSTICS_ENABLED = Boolean.getBoolean("reforged.jadeDiagnostics");
 
     /** Channel name → SimpleChannel instance */
     private static final Map<String, SimpleChannel> CHANNELS = new ConcurrentHashMap<>();
@@ -46,10 +47,10 @@ public final class PayloadChannelRegistry {
     /** Payload type ResourceLocation → ChannelEntry (the channel + discriminator + handler info) */
     private static final Map<ResourceLocation, ChannelEntry<?>> PAYLOAD_INDEX = new ConcurrentHashMap<>();
 
-        private static final Set<ResourceLocation> JADE_DIAGNOSTIC_PAYLOADS = Set.of(
+    private static final Set<ResourceLocation> JADE_DIAGNOSTIC_PAYLOADS = Set.of(
             ResourceLocation.fromNamespaceAndPath("jade", "show_overlay"),
             ResourceLocation.fromNamespaceAndPath("jade", "receive_data")
-        );
+    );
 
     private PayloadChannelRegistry() {}
 
@@ -122,7 +123,7 @@ public final class PayloadChannelRegistry {
                 }
                 try {
                     if (isJadeDiagnosticPayload(wrapper.payloadId)) {
-                        LOGGER.info("[ReForged][JadeDiag] encode payload={} payloadClass={} bufClass={}",
+                        LOGGER.debug("[ReForged][JadeDiag] encode payload={} payloadClass={} bufClass={}",
                                 wrapper.payloadId,
                                 wrapper.payload != null ? wrapper.payload.getClass().getName() : "null",
                                 buf.getClass().getName());
@@ -144,7 +145,7 @@ public final class PayloadChannelRegistry {
                 try {
                     Object decoded = ((StreamCodec) e.codec()).decode(buf);
                     if (isJadeDiagnosticPayload(id)) {
-                        LOGGER.info("[ReForged][JadeDiag] decode payload={} decodedClass={} bufClass={}",
+                        LOGGER.debug("[ReForged][JadeDiag] decode payload={} decodedClass={} bufClass={}",
                                 id,
                                 decoded != null ? decoded.getClass().getName() : "null",
                                 buf.getClass().getName());
@@ -174,9 +175,9 @@ public final class PayloadChannelRegistry {
                     if (isJadeDiagnosticPayload(wrapper.payloadId)) {
                         String packetFlow = neoCtx.flow() != null ? neoCtx.flow().name() : "unknown";
                         String sender = ctx.getSender() != null ? ctx.getSender().getGameProfile().getName() : "client/local";
-                        LOGGER.info("[ReForged][JadeDiag] handle payload={} flow={} sender={} payloadClass={}",
+                        LOGGER.debug("[ReForged][JadeDiag] handle payload={} flow={} sender={} payloadClass={}",
                                 wrapper.payloadId,
-                            packetFlow,
+                                packetFlow,
                                 sender,
                                 wrapper.payload.getClass().getName());
                     }
@@ -205,7 +206,7 @@ public final class PayloadChannelRegistry {
             return;
         }
         if (isJadeDiagnosticPayload(payload.type().id())) {
-            LOGGER.info("[ReForged][JadeDiag] sendToPlayer payload={} target={} payloadClass={}",
+            LOGGER.debug("[ReForged][JadeDiag] sendToPlayer payload={} target={} payloadClass={}",
                     payload.type().id(),
                     player.getGameProfile().getName(),
                     payload.getClass().getName());
@@ -224,7 +225,7 @@ public final class PayloadChannelRegistry {
             return;
         }
         if (isJadeDiagnosticPayload(payload.type().id())) {
-            LOGGER.info("[ReForged][JadeDiag] sendToServer payload={} payloadClass={}",
+            LOGGER.debug("[ReForged][JadeDiag] sendToServer payload={} payloadClass={}",
                     payload.type().id(), payload.getClass().getName());
         }
         PayloadWrapper<CustomPacketPayload> wrapper = new PayloadWrapper<>(payload.type().id(), payload);
@@ -241,7 +242,7 @@ public final class PayloadChannelRegistry {
             return;
         }
         if (isJadeDiagnosticPayload(payload.type().id())) {
-            LOGGER.info("[ReForged][JadeDiag] sendToAllPlayers payload={} payloadClass={}",
+            LOGGER.debug("[ReForged][JadeDiag] sendToAllPlayers payload={} payloadClass={}",
                     payload.type().id(), payload.getClass().getName());
         }
         PayloadWrapper<CustomPacketPayload> wrapper = new PayloadWrapper<>(payload.type().id(), payload);
@@ -258,7 +259,7 @@ public final class PayloadChannelRegistry {
             return;
         }
         if (isJadeDiagnosticPayload(payload.type().id())) {
-            LOGGER.info("[ReForged][JadeDiag] sendViaConnection payload={} flow={} payloadClass={}",
+            LOGGER.debug("[ReForged][JadeDiag] sendViaConnection payload={} flow={} payloadClass={}",
                     payload.type().id(),
                     connection.getReceiving() == PacketFlow.CLIENTBOUND ? "clientbound" : "serverbound",
                     payload.getClass().getName());
@@ -269,7 +270,9 @@ public final class PayloadChannelRegistry {
     }
 
     private static boolean isJadeDiagnosticPayload(ResourceLocation payloadId) {
-        return payloadId != null && "jade".equals(payloadId.getNamespace())
+        return JADE_DIAGNOSTICS_ENABLED
+            && payloadId != null
+            && "jade".equals(payloadId.getNamespace())
                 && JADE_DIAGNOSTIC_PAYLOADS.contains(payloadId);
     }
 

@@ -1,5 +1,10 @@
 {
   "nonnull_list_patch": "coremods/nonnull_list_patch.js",
   "shaped_recipe_pattern_patch": "coremods/shaped_recipe_pattern_patch.js",
-  "keymapping_bridge": "coremods/keymapping_bridge.js"
+  "keymapping_bridge": "coremods/keymapping_bridge.js",
+  "defaulted_registry_patch": "coremods/defaulted_registry_patch.js",
+  "saveddata_factory_patch": "coremods/saveddata_factory_patch.js",
+  "entity_render_safety": "coremods/entity_render_safety.js",
+  "model_resource_location_standalone": "coremods/model_resource_location_standalone.js",
+  "aabb_infinite_field": "coremods/aabb_infinite_field.js"
 }

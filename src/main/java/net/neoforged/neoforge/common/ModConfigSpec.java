@@ -1,5 +1,7 @@
 package net.neoforged.neoforge.common;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.ConfigFormat;
 import com.electronwill.nightconfig.core.EnumGetMethod;
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -8,6 +10,7 @@ import net.neoforged.fml.config.IConfigSpec;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -16,10 +19,11 @@ import java.util.function.Supplier;
 /**
  * Proxy: NeoForge's ModConfigSpec → wraps Forge's ForgeConfigSpec.
  *
- * <p>This class wraps a ForgeConfigSpec and implements IConfigSpec.
- * The Builder uses composition and returns ModConfigSpec from build()/configure().</p>
+ * <p>This class wraps a ForgeConfigSpec and implements both
+ * NeoForge's IConfigSpec and Forge's IConfigSpec so it can be cast to either.</p>
  */
-public final class ModConfigSpec implements IConfigSpec {
+public final class ModConfigSpec implements IConfigSpec,
+        net.minecraftforge.fml.config.IConfigSpec<ModConfigSpec> {
 
     private static final Map<ForgeConfigSpec, ModConfigSpec> WRAPPERS = new ConcurrentHashMap<>();
 
@@ -54,6 +58,47 @@ public final class ModConfigSpec implements IConfigSpec {
     public void afterReload() {
         forgeSpec.afterReload();
     }
+
+    // ══════════════════════════════════════════════════════════
+    //  Forge IConfigSpec<ModConfigSpec> implementation
+    // ══════════════════════════════════════════════════════════
+
+    @Override
+    public ModConfigSpec self() { return this; }
+
+    @Override
+    public void acceptConfig(CommentedConfig data) { forgeSpec.acceptConfig(data); }
+
+    @Override
+    public boolean isCorrecting() { return forgeSpec.isCorrecting(); }
+
+    @Override
+    public boolean isCorrect(CommentedConfig commentedFileConfig) { return forgeSpec.isCorrect(commentedFileConfig); }
+
+    @Override
+    public int correct(CommentedConfig commentedFileConfig) { return forgeSpec.correct(commentedFileConfig); }
+
+    // ══════════════════════════════════════════════════════════
+    //  UnmodifiableConfig implementation (required by Forge IConfigSpec)
+    // ══════════════════════════════════════════════════════════
+
+    @Override
+    public <T> T getRaw(List<String> path) { return forgeSpec.getRaw(path); }
+
+    @Override
+    public boolean contains(List<String> path) { return forgeSpec.contains(path); }
+
+    @Override
+    public int size() { return forgeSpec.size(); }
+
+    @Override
+    public Map<String, Object> valueMap() { return forgeSpec.valueMap(); }
+
+    @Override
+    public Set<? extends UnmodifiableConfig.Entry> entrySet() { return forgeSpec.entrySet(); }
+
+    @Override
+    public ConfigFormat<?> configFormat() { return forgeSpec.configFormat(); }
 
     public void resetCaches(RestartType restartType) {
         // Forge doesn't track NeoForge restart granularities, so clear all cached values.

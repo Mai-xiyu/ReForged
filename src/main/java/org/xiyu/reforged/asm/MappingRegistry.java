@@ -34,8 +34,12 @@ public final class MappingRegistry {
 
     // Exact class-level overrides:  internal name → internal name
     private final Map<String, String> classMap = new HashMap<>();
-    // Package-prefix redirects (longest-prefix-first at lookup time)
+    // Reverse class map: Forge internal name → NeoForge internal name
+    private final Map<String, String> reverseClassMap = new HashMap<>();
+    // Package-prefix redirects (resolved via longest-prefix match at lookup time)
     private final Map<String, String> packageMap = new HashMap<>();
+    // Reverse package map: Forge package prefix → NeoForge package prefix
+    private final Map<String, String> reversePackageMap = new HashMap<>();
 
     private int directCount = 0;
     private int shimCount = 0;
@@ -68,6 +72,7 @@ public final class MappingRegistry {
                     String from = toInternal(rule.get("from").getAsString());
                     String to   = toInternal(rule.get("to").getAsString());
                     packageMap.put(from, to);
+                    reversePackageMap.put(to, from);
                     boolean isShim = to.startsWith("org/xiyu/reforged/shim");
                     if (isShim) shimCount++; else directCount++;
                 }
@@ -81,6 +86,7 @@ public final class MappingRegistry {
                     String from = toInternal(rule.get("from").getAsString());
                     String to   = toInternal(rule.get("to").getAsString());
                     classMap.put(from, to);
+                    reverseClassMap.put(to, from);
                     boolean isShim = to.startsWith("org/xiyu/reforged/shim");
                     if (isShim) shimCount++; else directCount++;
                 }
@@ -106,11 +112,31 @@ public final class MappingRegistry {
         String exact = classMap.get(internalName);
         if (exact != null) return exact;
 
-        // 2. Package-prefix match (first match wins — order is insertion order)
-        for (Map.Entry<String, String> entry : packageMap.entrySet()) {
-            if (internalName.startsWith(entry.getKey())) {
-                return entry.getValue() + internalName.substring(entry.getKey().length());
+        // 1b. Inner class: propagate outer class mapping (e.g. ClientTickEvent$Pre
+        //     inherits identity mapping from ClientTickEvent)
+        int dollar = internalName.lastIndexOf('$');
+        if (dollar != -1) {
+            String outer = internalName.substring(0, dollar);
+            String outerMapping = classMap.get(outer);
+            if (outerMapping != null) {
+                return outerMapping + internalName.substring(dollar);
             }
+        }
+
+        // 2. Package-prefix match (most specific / longest prefix wins)
+        String bestFrom = null;
+        String bestTo = null;
+        int bestLen = -1;
+        for (Map.Entry<String, String> entry : packageMap.entrySet()) {
+            String from = entry.getKey();
+            if (internalName.startsWith(from) && from.length() > bestLen) {
+                bestFrom = from;
+                bestTo = entry.getValue();
+                bestLen = from.length();
+            }
+        }
+        if (bestFrom != null) {
+            return bestTo + internalName.substring(bestFrom.length());
         }
 
         return internalName;
@@ -134,6 +160,47 @@ public final class MappingRegistry {
         String internal = toInternal(dottedName);
         String remapped = remapClass(internal);
         return remapped.replace('/', '.');
+    }
+
+    /**
+     * Reverse-remap a dotted Forge/shim class name back to the original NeoForge name.
+     *
+     * @return the NeoForge dotted class name, or {@code null} if no reverse mapping exists
+     */
+    public String reverseRemapClassName(String dottedForgeName) {
+        String internal = toInternal(dottedForgeName);
+
+        // 1. Exact class override (reverse)
+        String exact = reverseClassMap.get(internal);
+        if (exact != null) return exact.replace('/', '.');
+
+        // 1b. Inner class: propagate outer class reverse mapping
+        int dollar = internal.lastIndexOf('$');
+        if (dollar != -1) {
+            String outer = internal.substring(0, dollar);
+            String outerMapping = reverseClassMap.get(outer);
+            if (outerMapping != null) {
+                return (outerMapping + internal.substring(dollar)).replace('/', '.');
+            }
+        }
+
+        // 2. Package-prefix match (most specific / longest prefix wins)
+        String bestFrom = null;
+        String bestTo = null;
+        int bestLen = -1;
+        for (Map.Entry<String, String> entry : reversePackageMap.entrySet()) {
+            String from = entry.getKey();
+            if (internal.startsWith(from) && from.length() > bestLen) {
+                bestFrom = from;
+                bestTo = entry.getValue();
+                bestLen = from.length();
+            }
+        }
+        if (bestFrom != null) {
+            return (bestTo + internal.substring(bestFrom.length())).replace('/', '.');
+        }
+
+        return null;
     }
 
     // ─── Helpers ───────────────────────────────────────────────────

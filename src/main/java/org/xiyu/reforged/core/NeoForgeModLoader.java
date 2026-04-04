@@ -41,12 +41,29 @@ public final class NeoForgeModLoader {
     /** Stored reference to Forge's mod event bus. */
     private static IEventBus storedModEventBus;
 
+    /** Stored reference to the NeoMod classloader (for reflection-based Flywheel bridge). */
+    private static ClassLoader neoModClassLoader;
+
+    /** Get the NeoMod classloader, or null if not yet created. */
+    public static ClassLoader getNeoModClassLoader() {
+        return neoModClassLoader;
+    }
+
     /**
      * Get the paths of all successfully loaded NeoForge mod JARs.
      * Used by the resource pack injector to register JAR resources.
      */
     public static List<Path> getLoadedNeoJarPaths() {
         return Collections.unmodifiableList(loadedNeoJarPaths);
+    }
+
+    /**
+     * Get the stored Forge mod event bus.
+     * Used by {@link org.xiyu.reforged.shim.NeoForgeEventBusShim} to register
+     * bridge listeners for mod-bus-only events (e.g. ModelEvent.RegisterAdditional).
+     */
+    public static IEventBus getForgeModBus() {
+        return storedModEventBus;
     }
 
     /**
@@ -71,6 +88,17 @@ public final class NeoForgeModLoader {
             LOGGER.error("[ReForged] Failed to dispatch NeoForge mod event {}: {}",
                     event.getClass().getSimpleName(), t.getMessage(), t);
         }
+    }
+
+    /**
+     * Verifier-safe dispatch entrypoint for mixin-injected call sites that cannot
+     * statically prove assignability to Forge Event during bootstrap.
+     */
+    public static void dispatchNeoForgeModEventUntyped(Object event) {
+        if (!(event instanceof net.minecraftforge.eventbus.api.Event forgeEvent)) {
+            return;
+        }
+        dispatchNeoForgeModEvent(forgeEvent);
     }
 
     /**
@@ -118,9 +146,20 @@ public final class NeoForgeModLoader {
         }
 
         // Phase 2: Create classloader with all NeoForge JARs
+        List<Path> extractedJiJJars = new ArrayList<>();
         URLClassLoader neoClassLoader = NeoModClassLoader.createClassLoader(
-                neoJars, NeoForgeModLoader.class.getClassLoader());
+                neoJars, NeoForgeModLoader.class.getClassLoader(), extractedJiJJars);
         if (neoClassLoader == null) return;
+        neoModClassLoader = neoClassLoader;
+
+        // Phase 2.1: Add extracted JiJ JARs (e.g. Flywheel inside Create) to the scan list
+        // so their @Mod classes are discovered and instantiated
+        if (!extractedJiJJars.isEmpty()) {
+            LOGGER.info("[ReForged] Adding {} extracted JiJ JARs to mod scan list: {}",
+                    extractedJiJJars.size(),
+                    extractedJiJJars.stream().map(p -> p.getFileName().toString()).toList());
+            neoJars.addAll(extractedJiJJars);
+        }
 
         // Phase 2.5: Open game module packages to the URLClassLoader's unnamed module
         // so NeoForge mod classes can access Minecraft/Forge classes across the module boundary.

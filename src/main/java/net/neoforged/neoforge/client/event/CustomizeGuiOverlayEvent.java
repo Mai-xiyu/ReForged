@@ -1,6 +1,7 @@
 package net.neoforged.neoforge.client.event;
 
 import net.minecraft.client.gui.GuiGraphics;
+import java.util.List;
 
 /** Wrapper around Forge's {@link net.minecraftforge.client.event.CustomizeGuiOverlayEvent}. */
 public class CustomizeGuiOverlayEvent {
@@ -28,5 +29,17 @@ public class CustomizeGuiOverlayEvent {
         public int getY() { return forgeEvent.getY(); }
         public int getIncrement() { return forgeEvent.getIncrement(); }
         public void setIncrement(int increment) { forgeEvent.setIncrement(increment); }
+    }
+
+    /** Wrapper for Forge's DebugText event — adds/removes debug screen text. */
+    public static class DebugText extends CustomizeGuiOverlayEvent {
+        private final net.minecraftforge.client.event.CustomizeGuiOverlayEvent.DebugText forgeEvent;
+
+        public DebugText(net.minecraftforge.client.event.CustomizeGuiOverlayEvent.DebugText delegate) {
+            super(delegate);
+            this.forgeEvent = delegate;
+        }
+
+        public List<String> getText() { return forgeEvent.getText(); }
     }
 }

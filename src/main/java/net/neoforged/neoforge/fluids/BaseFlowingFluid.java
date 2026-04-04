@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -80,6 +81,12 @@ public abstract class BaseFlowingFluid extends FlowingFluid {
 
     @Override
     public int getTickDelay(LevelReader level) { return tickRate; }
+
+    @Override
+    protected void createFluidStateDefinition(StateDefinition.Builder<Fluid, FluidState> builder) {
+        super.createFluidStateDefinition(builder);
+        builder.add(LEVEL);
+    }
 
     @Override
     protected BlockState createLegacyBlock(FluidState state) {

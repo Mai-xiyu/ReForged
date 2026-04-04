@@ -43,7 +43,16 @@ public class Reforged {
     /** Cached NIO FileSystems for NeoForge JARs — kept alive for the game session. */
     private static final List<FileSystem> jarFileSystems = new ArrayList<>();
 
+    // Forge 51 constructs @Mod classes via no-arg constructor.
+    public Reforged() {
+        init(FMLJavaModLoadingContext.get());
+    }
+
     public Reforged(FMLJavaModLoadingContext context) {
+        init(context);
+    }
+
+    private void init(FMLJavaModLoadingContext context) {
         LOGGER.info("========================================");
         LOGGER.info(" ReForged v{} — NeoForge Compatibility Bridge", VERSION);
         LOGGER.info("========================================");
@@ -74,6 +83,9 @@ public class Reforged {
         NeoForgeModLoader.dispatchNeoForgeModEvent(new net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent());
         // Populate built-in DataMaps from vanilla/Forge data
         DataMapInitializer.populateBuiltinDataMaps();
+        // Initialize cauldron fluid content and let NeoForge mods register custom cauldrons
+        net.neoforged.neoforge.fluids.CauldronFluidContent.init();
+        NeoForgeModLoader.dispatchNeoForgeModEvent(new net.neoforged.neoforge.fluids.RegisterCauldronFluidContentEvent());
         LOGGER.info("[ReForged] Common setup phase — NeoForge bridge active");
     }
 
@@ -84,6 +96,19 @@ public class Reforged {
 
         // 1. RegisterDimensionSpecialEffectsEvent (Twilight Forest needs this)
         net.neoforged.neoforge.client.DimensionSpecialEffectsManager.init();
+
+        // 1.5. RegisterGuiLayersEvent (Create goggle overlay, etc.)
+        // Layers are collected here and deferred; GuiRenderMixin applies them on first Gui.render().
+        try {
+            var guiLayersEvent = new net.neoforged.neoforge.client.event.RegisterGuiLayersEvent();
+            NeoForgeModLoader.dispatchNeoForgeModEvent(guiLayersEvent);
+            int layerCount = guiLayersEvent.getOrderedLayers().size();
+            if (layerCount > 0) {
+                LOGGER.info("[ReForged] Collected {} NeoForge GUI layer(s) (deferred apply on first render)", layerCount);
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("[ReForged] RegisterGuiLayersEvent dispatch failed: {}", t.getMessage());
+        }
 
         // 2. RegisterClientExtensionsEvent (Create/TF need this for custom rendering)
         NeoForgeModLoader.dispatchNeoForgeModEvent(

@@ -86,6 +86,30 @@ public final class NeoModInstantiator {
             return ctor.newInstance(container, busAdapter);
         } catch (NoSuchMethodException ignored) {}
 
+            // Pattern 3c: (net.minecraftforge.eventbus.api.IEventBus, net.minecraftforge.fml.ModContainer)
+            try {
+                Constructor<?> ctor = modClass.getDeclaredConstructor(
+                    IEventBus.class,
+                    net.minecraftforge.fml.ModContainer.class);
+                ctor.setAccessible(true);
+                net.minecraftforge.fml.ModContainer forgeContainer =
+                    net.minecraftforge.fml.ModLoadingContext.get().getActiveContainer();
+                LOGGER.debug("[ReForged] Matched constructor pattern 3c (Forge IEventBus, Forge ModContainer) for {}", modClass.getName());
+                return ctor.newInstance(modBus, forgeContainer);
+            } catch (NoSuchMethodException ignored) {}
+
+            // Pattern 3d: (net.minecraftforge.fml.ModContainer, net.minecraftforge.eventbus.api.IEventBus) — reversed order
+            try {
+                Constructor<?> ctor = modClass.getDeclaredConstructor(
+                    net.minecraftforge.fml.ModContainer.class,
+                    IEventBus.class);
+                ctor.setAccessible(true);
+                net.minecraftforge.fml.ModContainer forgeContainer =
+                    net.minecraftforge.fml.ModLoadingContext.get().getActiveContainer();
+                LOGGER.debug("[ReForged] Matched constructor pattern 3d (Forge ModContainer, Forge IEventBus) for {}", modClass.getName());
+                return ctor.newInstance(forgeContainer, modBus);
+            } catch (NoSuchMethodException ignored) {}
+
         // Pattern 4: (net.neoforged.bus.api.IEventBus, net.neoforged.api.distmarker.Dist)
         try {
             Constructor<?> ctor = modClass.getDeclaredConstructor(
@@ -157,6 +181,24 @@ public final class NeoModInstantiator {
                 Object container = createModContainerForClassLoader(params[1], modClass.getClassLoader());
                 LOGGER.info("[ReForged] Name-based fallback matched (IEventBus, ModContainer) for {}", modClass.getName());
                 return ctor.newInstance(adaptedBus, container);
+            }
+
+            // Name-match: (Forge IEventBus, Forge ModContainer)
+            if (params.length == 2
+                    && params[0].getName().equals("net.minecraftforge.eventbus.api.IEventBus")
+                    && params[1].getName().equals("net.minecraftforge.fml.ModContainer")) {
+                ctor.setAccessible(true);
+                LOGGER.info("[ReForged] Name-based fallback matched (Forge IEventBus, Forge ModContainer) for {}", modClass.getName());
+                return ctor.newInstance(modBus, net.minecraftforge.fml.ModLoadingContext.get().getActiveContainer());
+            }
+
+            // Name-match: (Forge ModContainer, Forge IEventBus) — reversed order
+            if (params.length == 2
+                    && params[0].getName().equals("net.minecraftforge.fml.ModContainer")
+                    && params[1].getName().equals("net.minecraftforge.eventbus.api.IEventBus")) {
+                ctor.setAccessible(true);
+                LOGGER.info("[ReForged] Name-based fallback matched (Forge ModContainer, Forge IEventBus) for {}", modClass.getName());
+                return ctor.newInstance(net.minecraftforge.fml.ModLoadingContext.get().getActiveContainer(), modBus);
             }
 
             // Name-match: (ModContainer, IEventBus) — reversed order

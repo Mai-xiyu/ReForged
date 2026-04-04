@@ -28,7 +28,7 @@ ReForged is an innovative runtime adapter that bridges the gap between NeoForge 
 - 🎯 **Event Bus Bridging** — Transparent event system compatibility
 - 📦 **Resource Integration** — NeoForge mod assets (textures, models, recipes) automatically available
 - ⚙️ **Automatic Configuration** — Seamless conversion of `neoforge.mods.toml` to Forge format
-- 🎨 **Comprehensive Patching** — 46 Mixin patches for edge case compatibility
+- 🎨 **Comprehensive Patching** — 91 Mixin patches for edge case compatibility
 - 🛠️ **API Shims** — Drop-in replacements for DeferredRegister, CreativeTabs, Attachments, and more
 
 ## 🏗️ Technical Architecture
@@ -60,7 +60,7 @@ Register mod resources as Minecraft resource packs
 | **ReForgedRemapper** | Rewrites NeoForge class references to Forge equivalents |
 | **NeoForgeEventBusAdapter** | Dynamic proxy bridging event bus systems |
 | **Shim Layer** | Drop-in API replacements for NeoForge classes |
-| **Mixin System** | 46 patches for Minecraft/Forge compatibility |
+| **Mixin System** | 91 patches for Minecraft/Forge compatibility |
 
 ## 📦 Installation
 
@@ -156,7 +156,7 @@ The table below outlines the expected compatibility for different types and scal
 | **Network / Payload mods** | Custom payload communication | ✅ Good | `PayloadRegistrar` registration and bidirectional `reply()` implemented |
 | **Client rendering mods** | Custom models, particles, HUD overlays | ⚠️ Partial | Basic model loading (OBJ/JSON), `RenderType` registration, GUI events available; deep BakedModel transforms and custom shaders may need adaptation |
 | **Info / Tooltip mods** | Jade, WTHIT, JEI plugins | ⚠️ Partial | Depends on how deeply the mod relies on NeoForge extension interfaces; Jade has a dedicated Mixin patch |
-| **Large content mods** | Mekanism, Create, etc. | ⚠️ Partial | DataMap, BiomeModifier codecs, attribute modifier events, RenderBuffers injection, DimensionSpecialEffects injection, GUI layer ordering all implemented; most core features run, some edge paths may need extra patches |
+| **Large content mods** | Mekanism, Create, etc. | ⚠️ Partial | DataMap, BiomeModifier codecs, attribute modifier events, RenderBuffers injection, DimensionSpecialEffects injection, GUI layer ordering, Flywheel GPU rendering pipeline all implemented; most core features run, some edge paths may need extra patches |
 | **Core / Low-level mods** | Custom ModLoader extensions, ServiceLoader overrides | ❌ Unsupported | Mods that manipulate FML internals or NeoForge bootstrap stages cannot be shimmed |
 
 **Scale Reference:**
@@ -169,21 +169,21 @@ The table below outlines the expected compatibility for different types and scal
 
 ## 📊 Current Progress Snapshot
 
-Latest implementation snapshot, approximate as of 2026-03-30.
+Latest implementation snapshot, approximate as of 2026-04-05.
 
 | Subsystem | Weight | Completion | Weighted Score |
 |-----------|--------|------------|----------------|
-| Mod loading pipeline | 20% | 82% | 16.4 |
+| Mod loading pipeline | 20% | 85% | 17.0 |
 | Event system | 20% | 98% | 19.6 |
 | Registry system | 15% | 95% | 14.25 |
 | Capability system | 10% | 95% | 9.5 |
 | Network / Payload | 8% | 82% | 6.56 |
 | Extension / Common API | 12% | 96% | 11.52 |
-| Client side | 10% | 95% | 9.5 |
-| Mixin coverage | 5% | 85% | 4.25 |
-| **Total** | **100%** |  | **~92%** |
+| Client side | 10% | 97% | 9.7 |
+| Mixin coverage | 5% | 95% | 4.75 |
+| **Total** | **100%** |  | **~93%** |
 
-### Recent Changes (03-09 → 03-30)
+### Recent Changes (03-09 → 04-05)
 
 #### Phase 1 (03-09 → 03-10): Core Event & API Framework
 - **Event system (major)**: Added **60 Forge wrapper constructors** enabling automatic event bridging via `NeoForgeEventBusAdapter`. Covers server lifecycle, entity, living, player, level, village, brewing, enchanting, and grindstone events.
@@ -215,10 +215,20 @@ Latest implementation snapshot, approximate as of 2026-03-30.
 - **ModifyCustomSpawnersEvent**: Upgraded to carry a mutable `List<CustomSpawner>` spawner list.
 - **RegisterGuiLayersEvent ordering fix**: `registerAbove()`/`registerBelow()` now use `ForgeLayeredDraw.addAbove()`/`addBelow()` for correct Z-ordering — fixes Create goggle/schematic overlay display.
 
+#### Phase 6 (03-30 → 04-05): Create Accessor Bridge & Flywheel GPU Rendering Pipeline
+- **Create Accessor Interface Bridge (33 interfaces)**: Complete BytecodeRewriter-based solution for all 33 Create accessor/extension interfaces. `CHECKCAST` redirects from NeoForge accessor types to vanilla MC target classes; `INVOKEINTERFACE` → `INVOKEVIRTUAL` rewrites. 24 new Mixin files inject accessor method bodies into vanilla classes (e.g., `LevelRendererAccessorMixin`, `ParticleEngineAccessorMixin`, `GameRendererAccessorMixin`).
+- **Flywheel Accessor Interface Bridge (10 interfaces)**: Same pattern applied to all 7 Flywheel accessor interfaces + 3 extension interfaces. Covers `LevelRendererAccessor`, `AbstractClientPlayerAccessor`, `LightEngineAccessor`, `LayerLightSectionStorageAccessor`, `SkyDataLayerStorageMapAccessor`, `ModelPartAccessor`, `PoseStackAccessor`, plus `LevelExtension`, `PoseStackExtension`, `SkyLightSectionStorageExtension`.
+- **Flywheel Render Pipeline Hooks**: `FlywheelLevelRendererMixin` injects into `LevelRenderer.renderLevel()` at 4 injection points (beginRender, beforeBlockEntities, beforeCrumbling, endRender). `FlywheelRenderBridge` uses reflection to invoke Flywheel's `FlwBackend` / `VisualizationManagerImpl` through the NeoModClassLoader boundary.
+- **EventBusHelper Boolean ClassCast Fix**: Rewrote `postAndReturn()` to bypass the IEventBus proxy entirely — calls `NeoForgeEventBusAdapter.dispatchFallback()` + `MinecraftForge.EVENT_BUS.post()` directly, eliminating `ReloadLevelRendererEvent cannot be cast to Boolean`.
+- **SkyLightSectionStorage Extension**: Complex mixin implementing Flywheel's `flywheel$skyDataLayer(long)` — traverses upward through light sections using `FlywheelSkyStorageMapHelper` (transformer-classloader interface) to bridge `SkyDataLayerStorageMap`'s package-private fields.
+- **AABB.INFINITE CoreMod**: JavaScript coremod patches `AABB` class to add the `INFINITE` static field (NeoForge addition not present in Forge).
+- **Standalone ModelResourceLocation**: CoreMod fixes `ModelResourceLocation.standalone()` factory method for models without block state variants.
+- **Verifier Stack Frame Fix**: BytecodeRewriter now patches stack frame types to replace NeoForge accessor interface descriptors with vanilla MC class descriptors — fixes `VerifyError` from JVM bytecode verification.
+
 ### Notes
 
 - The percentages above are engineering estimates, not formal test pass rates.
-- 782 Java source files total (688 shim + 94 core), 46 Mixin patches, 60 event wrapper constructors.
+- 861 Java source files total (709 shim + 52 core + 100 mixin), 91 Mixin patches, 7 JavaScript CoreMods, 60 event wrapper constructors.
 - Only 4 `UnsupportedOperationException` remain — all intentional by design (e.g. `PartEntity.getAddEntityPacket()`, `ClientCommandSourceStack.getServer()`).
 - The biggest remaining gaps are advanced entity sync protocols, NeoForge-exclusive deep vanilla patch behavior (e.g. PistonPushReaction extension), and potentially uncovered edge paths in large mods.
 

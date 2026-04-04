@@ -102,6 +102,7 @@ dependencies {
     runtimeOnly "maven.modrinth:jade:15.10.5+neoforge"                     // Jade — tooltip overlay
     runtimeOnly "maven.modrinth:waystones:21.1.19+neoforge-1.21.1"        // Waystones — teleport
     runtimeOnly "maven.modrinth:balm:21.0.41+neoforge-1.21.1"             // Balm — Waystones dep (>= 21.0.39 required)
+    runtimeOnly "maven.modrinth:create:n7NADxiG"                           // Create — kinetics & automation
 }
 
 tasks.named('processResources', ProcessResources).configure {

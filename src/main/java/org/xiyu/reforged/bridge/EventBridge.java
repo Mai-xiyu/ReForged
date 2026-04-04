@@ -63,7 +63,7 @@ public final class EventBridge {
 
         try {
             FORWARDING.set(true);
-            NeoForgeShim.EVENT_BUS.post(event);
+            NeoForgeShim.EVENT_BUS_SHIM.post(event);
         } finally {
             FORWARDING.set(false);
         }

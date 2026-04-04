@@ -129,7 +129,7 @@ public class AttributeUtil {
             Entry<Holder<Attribute>, AttributeModifier> entry = it.next();
             Holder<Attribute> attr = entry.getKey();
             AttributeModifier modif = entry.getValue();
-            if (modif.id().equals(((IAttributeExtension) attr.value()).getBaseId())) {
+            if (attr.value() instanceof IAttributeExtension ext && modif.id().equals(ext.getBaseId())) {
                 baseModifs.put(attr, new BaseModifier(modif, new ArrayList<>()));
                 it.remove();
             }
@@ -234,7 +234,15 @@ public class AttributeUtil {
      */
     public static void addPotionTooltip(List<Pair<Holder<Attribute>, AttributeModifier>> list, Consumer<Component> tooltips) {
         for (Pair<Holder<Attribute>, AttributeModifier> pair : list) {
-            tooltips.accept(((IAttributeExtension) pair.getFirst().value()).toComponent(pair.getSecond(), getTooltipFlag()));
+            if (pair.getFirst().value() instanceof IAttributeExtension ext) {
+                tooltips.accept(ext.toComponent(pair.getSecond(), getTooltipFlag()));
+            } else {
+                // Fallback: simple tooltip without NeoForge formatting
+                double amt = pair.getSecond().amount();
+                String key = amt > 0 ? "attribute.modifier.plus.0" : "attribute.modifier.take.0";
+                tooltips.accept(Component.translatable(key, String.format("%.2f", Math.abs(amt)),
+                        Component.translatable(pair.getFirst().value().getDescriptionId())));
+            }
         }
     }
 

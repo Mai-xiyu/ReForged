@@ -18,10 +18,20 @@ import java.util.Map;
  */
 public class RegisterGuiLayersEvent extends net.minecraftforge.eventbus.api.Event implements IModBusEvent {
 
+    /** Singleton instance for deferred layer application (layers are applied on first Gui.render). */
+    private static volatile RegisterGuiLayersEvent instance;
+
     /** Ordered map of id → layer, preserving insertion / relative order. */
     private final LinkedHashMap<ResourceLocation, LayeredDraw.Layer> layers = new LinkedHashMap<>();
 
-    public RegisterGuiLayersEvent() {}
+    public RegisterGuiLayersEvent() {
+        instance = this;
+    }
+
+    /** Returns the most recently created event instance, or null if not yet dispatched. */
+    public static RegisterGuiLayersEvent getInstance() {
+        return instance;
+    }
 
     /**
      * Register a GUI layer above all existing layers (rendered on top).

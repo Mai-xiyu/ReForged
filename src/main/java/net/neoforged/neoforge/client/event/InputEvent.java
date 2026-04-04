@@ -124,6 +124,8 @@ public abstract class InputEvent extends Event {
 
         public double getDeltaX() { return deltaX; }
         public double getDeltaY() { return deltaY; }
+        public double getScrollDeltaX() { return deltaX; }
+        public double getScrollDeltaY() { return deltaY; }
         public double getMouseX() { return mouseX; }
         public double getMouseY() { return mouseY; }
         public boolean isLeftDown() { return leftDown; }

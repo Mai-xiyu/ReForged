@@ -85,6 +85,19 @@ public abstract class ModelEvent extends Event {
         /** Wrapper constructor for EventBusAdapter bridging. */
         public BakingCompleted(net.minecraftforge.client.event.ModelEvent.BakingCompleted forge) {
             this(forge.getModelManager(), forge.getModels(), forge.getModelBakery());
+            com.mojang.logging.LogUtils.getLogger().info("[ReForged] BakingCompleted wrapper: models map size={}", this.models.size());
+            // Check for standalone models specifically
+            int standaloneCount = 0;
+            for (ModelResourceLocation mrl : this.models.keySet()) {
+                if ("standalone".equals(mrl.getVariant())) {
+                    standaloneCount++;
+                    if (standaloneCount <= 5) {
+                        com.mojang.logging.LogUtils.getLogger().info("[ReForged] BakingCompleted: found standalone model: {} → {}",
+                                mrl, this.models.get(mrl) != null ? "HAS_MODEL" : "NULL");
+                    }
+                }
+            }
+            com.mojang.logging.LogUtils.getLogger().info("[ReForged] BakingCompleted: {} standalone models found in baked map", standaloneCount);
         }
 
         public ModelManager getModelManager() { return modelManager; }
@@ -105,7 +118,23 @@ public abstract class ModelEvent extends Event {
         /** Wrapper constructor for EventBusAdapter bridging. */
         @SuppressWarnings("unchecked")
         public RegisterAdditional(net.minecraftforge.client.event.ModelEvent.RegisterAdditional forge) {
-            this(extractField(forge, "models", new java.util.HashSet<>()));
+            this(extractFieldLogged(forge, "models", new java.util.HashSet<>()));
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T> T extractFieldLogged(Object delegate, String fieldName, T fallback) {
+            try {
+                java.lang.reflect.Field f = delegate.getClass().getDeclaredField(fieldName);
+                f.setAccessible(true);
+                T result = (T) f.get(delegate);
+                com.mojang.logging.LogUtils.getLogger().info("[ReForged] RegisterAdditional: extracted '{}' field OK, set size={}, identity={}",
+                        fieldName, result instanceof java.util.Set<?> s ? s.size() : "?", System.identityHashCode(result));
+                return result;
+            } catch (Throwable t) {
+                com.mojang.logging.LogUtils.getLogger().error("[ReForged] RegisterAdditional: FAILED to extract '{}' field! Error: {} — using fallback empty set!",
+                        fieldName, t.toString());
+                return fallback;
+            }
         }
 
         public void register(ModelResourceLocation model) {
@@ -113,6 +142,7 @@ public abstract class ModelEvent extends Event {
                     model.getVariant().equals(STANDALONE_VARIANT),
                     "Side-loaded models must use the '" + STANDALONE_VARIANT + "' variant");
             models.add(model);
+            com.mojang.logging.LogUtils.getLogger().info("[ReForged] RegisterAdditional.register(): added {} (set size now={})", model, models.size());
         }
     }
 

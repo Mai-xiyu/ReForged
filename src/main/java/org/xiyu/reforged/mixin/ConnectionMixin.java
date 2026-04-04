@@ -34,6 +34,7 @@ import org.xiyu.reforged.shim.network.PayloadChannelRegistry;
 public class ConnectionMixin {
 
     private static final Logger REFORGED_LOGGER = LogUtils.getLogger();
+    private static final boolean JADE_DIAGNOSTICS_ENABLED = Boolean.getBoolean("reforged.jadeDiagnostics");
 
     /**
      * Primary interception point: the 2-arg send method that all public send() calls route through.
@@ -94,7 +95,9 @@ public class ConnectionMixin {
             if (payload != null) {
                 ResourceLocation payloadId = payload.type().id();
                 if (PayloadChannelRegistry.getEntry(payloadId) != null) {
-                    REFORGED_LOGGER.info("[ReForged] Intercepting clientbound NeoForge payload via {}: {}", source, payloadId);
+                    if (JADE_DIAGNOSTICS_ENABLED && "jade".equals(payloadId.getNamespace())) {
+                        REFORGED_LOGGER.debug("[ReForged] Intercepting clientbound NeoForge payload via {}: {}", source, payloadId);
+                    }
                     PayloadChannelRegistry.sendViaConnection((Connection) (Object) this, payload);
                     return true;
                 }
@@ -107,7 +110,9 @@ public class ConnectionMixin {
             if (payload != null) {
                 ResourceLocation payloadId = payload.type().id();
                 if (PayloadChannelRegistry.getEntry(payloadId) != null) {
-                    REFORGED_LOGGER.info("[ReForged] Intercepting serverbound NeoForge payload via {}: {}", source, payloadId);
+                    if (JADE_DIAGNOSTICS_ENABLED && "jade".equals(payloadId.getNamespace())) {
+                        REFORGED_LOGGER.debug("[ReForged] Intercepting serverbound NeoForge payload via {}: {}", source, payloadId);
+                    }
                     PayloadChannelRegistry.sendToServer(payload);
                     return true;
                 }

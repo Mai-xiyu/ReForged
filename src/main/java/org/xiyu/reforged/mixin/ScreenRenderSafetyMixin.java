@@ -31,7 +31,7 @@ public abstract class ScreenRenderSafetyMixin {
         ClassLoader screenLoader = self.getClass().getClassLoader();
 
         // Only wrap screens from NeoForge mod classloader
-        if (screenLoader == null || !screenLoader.getClass().getName().contains("NeoForgeModLoader")) {
+        if (screenLoader == null || !screenLoader.getClass().getName().contains("NeoModClassLoader")) {
             return;
         }
 

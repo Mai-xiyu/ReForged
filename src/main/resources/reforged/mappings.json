@@ -17,19 +17,142 @@
       "to": "net.minecraftforge.api."
     },
     {
-      "comment": "Common — extensions, capabilities (old-style), tags, util",
-      "from": "net.neoforged.neoforge.common.",
-      "to": "net.minecraftforge.common."
+      "comment": "Common sub-packages — identity mappings for NeoForge-only packages (must be before general common. rule if it were present). Extensions, crafting, conditions, damage, loot, data, world, enums, util all have NeoForge-specific classes that ReForged provides as shims. No broad common. → minecraftforge.common. rule needed — specific class overrides (ModConfigSpec→ForgeConfigSpec, MinecraftForge→MinecraftForge, Lazy→Lazy, etc.) handle the few direct equivalents.",
+      "from": "net.neoforged.neoforge.common.extensions.",
+      "to": "net.neoforged.neoforge.common.extensions."
     },
     {
-      "comment": "Events — all game events (tick, entity, player, block, world, server, etc.)",
+      "from": "net.neoforged.neoforge.common.conditions.",
+      "to": "net.neoforged.neoforge.common.conditions."
+    },
+    {
+      "from": "net.neoforged.neoforge.common.crafting.",
+      "to": "net.neoforged.neoforge.common.crafting."
+    },
+    {
+      "from": "net.neoforged.neoforge.common.damagesource.",
+      "to": "net.neoforged.neoforge.common.damagesource."
+    },
+    {
+      "from": "net.neoforged.neoforge.common.enums.",
+      "to": "net.neoforged.neoforge.common.enums."
+    },
+    {
+      "from": "net.neoforged.neoforge.common.loot.",
+      "to": "net.neoforged.neoforge.common.loot."
+    },
+    {
+      "from": "net.neoforged.neoforge.common.world.",
+      "to": "net.neoforged.neoforge.common.world."
+    },
+    {
+      "from": "net.neoforged.neoforge.common.data.",
+      "to": "net.neoforged.neoforge.common.data."
+    },
+    {
+      "from": "net.neoforged.neoforge.common.util.",
+      "to": "net.neoforged.neoforge.common.util."
+    },
+    {
+      "comment": "Common root — only classes with explicit class-level mappings above (ModConfigSpec, ForgeConfigSpec, MinecraftForge) will be remapped. All other NeoForge-only classes (NeoForgeMod, ItemAbility, etc.) stay at net.neoforged path where ReForged provides shims.",
+      "from": "net.neoforged.neoforge.common.",
+      "to": "net.neoforged.neoforge.common."
+    },
+    {
+      "comment": "Tick events — NeoForge-only, keep at original paths (must be before general event. rule)",
+      "from": "net.neoforged.neoforge.event.tick.",
+      "to": "net.neoforged.neoforge.event.tick."
+    },
+    {
+      "comment": "NeoForge-only events in event package — identity mappings to prevent wrong remapping",
+      "from": "net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent",
+      "to": "net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.ItemAttributeModifierEvent",
+      "to": "net.neoforged.neoforge.event.ItemAttributeModifierEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.StatAwardEvent",
+      "to": "net.neoforged.neoforge.event.StatAwardEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.ModifyDefaultComponentsEvent",
+      "to": "net.neoforged.neoforge.event.ModifyDefaultComponentsEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent",
+      "to": "net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent",
+      "to": "net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.level.BlockDropsEvent",
+      "to": "net.neoforged.neoforge.event.level.BlockDropsEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.level.BlockGrowFeatureEvent",
+      "to": "net.neoforged.neoforge.event.level.BlockGrowFeatureEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.level.ExplosionKnockbackEvent",
+      "to": "net.neoforged.neoforge.event.level.ExplosionKnockbackEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.event.level.ModifyCustomSpawnersEvent",
+      "to": "net.neoforged.neoforge.event.level.ModifyCustomSpawnersEvent"
+    },
+    {
+      "comment": "NeoForge LivingDamageEvent has $Pre/$Post inner classes that Forge lacks",
+      "from": "net.neoforged.neoforge.event.entity.living.LivingDamageEvent",
+      "to": "net.neoforged.neoforge.event.entity.living.LivingDamageEvent"
+    },
+    {
+      "comment": "Client events — identity. All 62+ shim classes provide NeoForge-specific methods (getContext, getPoseStack, getScrollDeltaY, etc.). Must override net.neoforged.neoforge.client. → net.minecraftforge.client. for the event sub-package.",
+      "from": "net.neoforged.neoforge.client.event.",
+      "to": "net.neoforged.neoforge.client.event."
+    },
+    {
+      "comment": "Entity events — identity. Shim classes (ItemTooltipEvent.getContext, PlayerInteractEvent.getUseItem→TriState, etc.) need NeoForge paths. Overrides event. → minecraftforge.event. for this sub-package.",
+      "from": "net.neoforged.neoforge.event.entity.",
+      "to": "net.neoforged.neoforge.event.entity."
+    },
+    {
+      "comment": "Level events — identity. All have shims with wrapper constructors.",
+      "from": "net.neoforged.neoforge.event.level.",
+      "to": "net.neoforged.neoforge.event.level."
+    },
+    {
+      "comment": "Events — all remaining game events (tick, server, etc.) remap to Forge",
       "from": "net.neoforged.neoforge.event.",
       "to": "net.minecraftforge.event."
+    },
+    {
+      "comment": "NeoForge registry callbacks — keep identity",
+      "from": "net.neoforged.neoforge.registries.callback.",
+      "to": "net.neoforged.neoforge.registries.callback."
+    },
+    {
+      "comment": "NeoForge datamaps API — keep identity (Forge has no direct builtin equivalent set)",
+      "from": "net.neoforged.neoforge.registries.datamaps.",
+      "to": "net.neoforged.neoforge.registries.datamaps."
     },
     {
       "comment": "Registries — DeferredRegister, ForgeRegistries, IForgeRegistry, etc.",
       "from": "net.neoforged.neoforge.registries.",
       "to": "net.minecraftforge.registries."
+    },
+    {
+      "comment": "NeoForge client extension API — keep identity",
+      "from": "net.neoforged.neoforge.client.extensions.common.",
+      "to": "net.neoforged.neoforge.client.extensions.common."
+    },
+    {
+      "comment": "NeoForge client GUI — ConfigurationScreen etc., keep identity",
+      "from": "net.neoforged.neoforge.client.gui.",
+      "to": "net.neoforged.neoforge.client.gui."
     },
     {
       "comment": "Client — rendering, models, particles, GUI, events",
@@ -44,7 +167,7 @@
     {
       "comment": "Fluids — FluidStack, IFluidHandler, FluidType, etc.",
       "from": "net.neoforged.neoforge.fluids.",
-      "to": "net.minecraftforge.fluids."
+      "to": "net.neoforged.neoforge.fluids."
     },
     {
       "comment": "Items — IItemHandler and related",
@@ -87,9 +210,9 @@
       "to": "net.minecraftforge.forgespi."
     },
     {
-      "comment": "Network — mapped to shim package for structural differences",
+      "comment": "Network — keep NeoForge package identity; proxy classes in ReForged delegate to shim internals",
       "from": "net.neoforged.neoforge.network.",
-      "to": "org.xiyu.reforged.shim.network."
+      "to": "net.neoforged.neoforge.network."
     },
     {
       "comment": "Data attachments — mapped to shim (NeoForge-only API)",
@@ -109,19 +232,19 @@
       "to": "org.xiyu.reforged.shim.NeoForgeShim"
     },
     {
-      "comment": "DeferredHolder → RegistryObject (bytecode API-compatible via .get())",
+      "comment": "DeferredHolder — keep NeoForge shim type (adds Neo-only helpers like isBound/create overloads)",
       "from": "net.neoforged.neoforge.registries.DeferredHolder",
-      "to": "net.minecraftforge.registries.RegistryObject"
+      "to": "net.neoforged.neoforge.registries.DeferredHolder"
     },
     {
-      "comment": "DeferredRegister (same create() API for ResourceKey variant)",
+      "comment": "DeferredRegister — keep NeoForge shim type",
       "from": "net.neoforged.neoforge.registries.DeferredRegister",
-      "to": "net.minecraftforge.registries.DeferredRegister"
+      "to": "net.neoforged.neoforge.registries.DeferredRegister"
     },
     {
-      "comment": "IEventBus — direct match",
+      "comment": "IEventBus — keep NeoForge shim interface (includes Neo overloads)",
       "from": "net.neoforged.bus.api.IEventBus",
-      "to": "net.minecraftforge.eventbus.api.IEventBus"
+      "to": "net.neoforged.bus.api.IEventBus"
     },
     {
       "comment": "SubscribeEvent annotation",
@@ -129,7 +252,7 @@
       "to": "net.minecraftforge.eventbus.api.SubscribeEvent"
     },
     {
-      "comment": "Event base class",
+      "comment": "Event base class — remapped to Forge (coremod adds bridge method to IEventBus for post() descriptor)",
       "from": "net.neoforged.bus.api.Event",
       "to": "net.minecraftforge.eventbus.api.Event"
     },
@@ -141,7 +264,7 @@
     {
       "comment": "ICancellableEvent (NeoForge) → Event.isCancelable() (Forge uses method)",
       "from": "net.neoforged.bus.api.ICancellableEvent",
-      "to": "net.minecraftforge.eventbus.api.Event"
+      "to": "net.neoforged.bus.api.ICancellableEvent"
     },
     {
       "comment": "@Mod annotation",
@@ -156,7 +279,7 @@
     {
       "comment": "ModLoadingContext",
       "from": "net.neoforged.fml.ModLoadingContext",
-      "to": "net.minecraftforge.fml.ModLoadingContext"
+      "to": "net.neoforged.fml.ModLoadingContext"
     },
     {
       "comment": "FMLJavaModLoadingContext",
@@ -166,12 +289,12 @@
     {
       "comment": "ModContainer",
       "from": "net.neoforged.fml.ModContainer",
-      "to": "net.minecraftforge.fml.ModContainer"
+      "to": "net.neoforged.fml.ModContainer"
     },
     {
       "comment": "ModList",
       "from": "net.neoforged.fml.ModList",
-      "to": "net.minecraftforge.fml.ModList"
+      "to": "net.neoforged.fml.ModList"
     },
     {
       "comment": "ModConfig",
@@ -181,12 +304,12 @@
     {
       "comment": "ModConfigSpec (NeoForge name) → ForgeConfigSpec (Forge name)",
       "from": "net.neoforged.neoforge.common.ModConfigSpec",
-      "to": "net.minecraftforge.common.ForgeConfigSpec"
+      "to": "net.neoforged.neoforge.common.ModConfigSpec"
     },
     {
       "comment": "ModConfigSpec$Builder → ForgeConfigSpec$Builder",
       "from": "net.neoforged.neoforge.common.ModConfigSpec$Builder",
-      "to": "net.minecraftforge.common.ForgeConfigSpec$Builder"
+      "to": "net.neoforged.neoforge.common.ModConfigSpec$Builder"
     },
     {
       "comment": "FMLCommonSetupEvent",
@@ -229,9 +352,34 @@
       "to": "net.minecraftforge.registries.IForgeRegistry"
     },
     {
-      "comment": "RegistryObject (if referenced directly)",
+      "comment": "RegistryObject alias — map to DeferredHolder shim",
       "from": "net.neoforged.neoforge.registries.RegistryObject",
-      "to": "net.minecraftforge.registries.RegistryObject"
+      "to": "net.neoforged.neoforge.registries.DeferredHolder"
+    },
+    {
+      "comment": "RegistryBuilder — keep NeoForge shim type (constructor signatures differ from Forge)",
+      "from": "net.neoforged.neoforge.registries.RegistryBuilder",
+      "to": "net.neoforged.neoforge.registries.RegistryBuilder"
+    },
+    {
+      "comment": "NeoForgeRegistries — keep NeoForge shim type",
+      "from": "net.neoforged.neoforge.registries.NeoForgeRegistries",
+      "to": "net.neoforged.neoforge.registries.NeoForgeRegistries"
+    },
+    {
+      "comment": "IConfigScreenFactory — keep NeoForge shim type",
+      "from": "net.neoforged.neoforge.client.gui.IConfigScreenFactory",
+      "to": "net.neoforged.neoforge.client.gui.IConfigScreenFactory"
+    },
+    {
+      "comment": "FluidStack — keep NeoForge shim type (STREAM_CODEC field shape differs)",
+      "from": "net.neoforged.neoforge.fluids.FluidStack",
+      "to": "net.neoforged.neoforge.fluids.FluidStack"
+    },
+    {
+      "comment": "IEntityWithComplexSpawn — keep NeoForge shim interface",
+      "from": "net.neoforged.neoforge.entity.IEntityWithComplexSpawn",
+      "to": "net.neoforged.neoforge.entity.IEntityWithComplexSpawn"
     },
     {
       "comment": "CreativeModeTab.Output → Forge equivalent",
@@ -261,7 +409,7 @@
     {
       "comment": "Lazy util",
       "from": "net.neoforged.neoforge.common.util.Lazy",
-      "to": "net.minecraftforge.common.util.Lazy"
+      "to": "net.neoforged.neoforge.common.util.Lazy"
     },
     {
       "comment": "InterModComms",
@@ -277,6 +425,89 @@
       "comment": "OnlyIn annotation",
       "from": "net.neoforged.api.distmarker.OnlyIn",
       "to": "net.minecraftforge.api.distmarker.OnlyIn"
+    },
+
+    {
+      "comment": "NeoForge-only client events — identity mappings to prevent package remapping. Inner classes ($Pre/$Post) are auto-handled by MappingRegistry.",
+      "from": "net.neoforged.neoforge.client.event.ClientTickEvent",
+      "to": "net.neoforged.neoforge.client.event.ClientTickEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RenderFrameEvent",
+      "to": "net.neoforged.neoforge.client.event.RenderFrameEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RenderGuiEvent",
+      "to": "net.neoforged.neoforge.client.event.RenderGuiEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RenderGuiLayerEvent",
+      "to": "net.neoforged.neoforge.client.event.RenderGuiLayerEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RegisterGuiLayersEvent",
+      "to": "net.neoforged.neoforge.client.event.RegisterGuiLayersEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RegisterMenuScreensEvent",
+      "to": "net.neoforged.neoforge.client.event.RegisterMenuScreensEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RegisterRenderBuffersEvent",
+      "to": "net.neoforged.neoforge.client.event.RegisterRenderBuffersEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RegisterDimensionTransitionScreenEvent",
+      "to": "net.neoforged.neoforge.client.event.RegisterDimensionTransitionScreenEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RegisterSpriteSourceTypesEvent",
+      "to": "net.neoforged.neoforge.client.event.RegisterSpriteSourceTypesEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RegisterJsonAnimationTypesEvent",
+      "to": "net.neoforged.neoforge.client.event.RegisterJsonAnimationTypesEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.RegisterMaterialAtlasesEvent",
+      "to": "net.neoforged.neoforge.client.event.RegisterMaterialAtlasesEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.AddAttributeTooltipsEvent",
+      "to": "net.neoforged.neoforge.client.event.AddAttributeTooltipsEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.AddSectionGeometryEvent",
+      "to": "net.neoforged.neoforge.client.event.AddSectionGeometryEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.CalculateDetachedCameraDistanceEvent",
+      "to": "net.neoforged.neoforge.client.event.CalculateDetachedCameraDistanceEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent",
+      "to": "net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.GatherEffectScreenTooltipsEvent",
+      "to": "net.neoforged.neoforge.client.event.GatherEffectScreenTooltipsEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.GatherSkippedAttributeTooltipsEvent",
+      "to": "net.neoforged.neoforge.client.event.GatherSkippedAttributeTooltipsEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.SelectMusicEvent",
+      "to": "net.neoforged.neoforge.client.event.SelectMusicEvent"
+    },
+    {
+      "from": "net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent",
+      "to": "net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent"
+    },
+    {
+      "comment": "Create accessor interface remap — align Neo mod classes with loader-stable shim type",
+      "from": "com.simibubi.create.foundation.mixin.accessor.BlockBehaviourAccessor",
+      "to": "org.xiyu.reforged.shim.create.BlockBehaviourAccessor"
     }
   ]
 }

@@ -77,8 +77,11 @@ public class BlockEntityRenderDispatcherMixin {
             String key = t.getClass().getName() + ":" +
                     (t.getMessage() != null ? t.getMessage().substring(0, Math.min(60, t.getMessage().length())) : "");
             if (LOGGED_ERRORS.size() < MAX_LOGGED && LOGGED_ERRORS.add(key)) {
+                // Log root cause with full stack trace for diagnosis
+                Throwable root = t;
+                while (root.getCause() != null) root = root.getCause();
                 REFORGED_LOGGER.error("[ReForged] Suppressed block entity render crash ({}): {}",
-                        t.getClass().getSimpleName(), t.getMessage());
+                        t.getClass().getSimpleName(), t.getMessage(), root);
             }
         }
     }

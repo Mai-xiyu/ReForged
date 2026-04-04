@@ -46,6 +46,14 @@ public class EntityEvent extends Event {
 
         public long getPackedOldPos() { return packedOldPos; }
         public long getPackedNewPos() { return packedNewPos; }
+
+        /**
+         * Whether the entity moved to a different chunk (NeoForge extension).
+         */
+        public boolean didChunkChange() {
+            return net.minecraft.core.SectionPos.x(packedOldPos) != net.minecraft.core.SectionPos.x(packedNewPos)
+                || net.minecraft.core.SectionPos.z(packedOldPos) != net.minecraft.core.SectionPos.z(packedNewPos);
+        }
     }
 
     public static class Size extends EntityEvent {

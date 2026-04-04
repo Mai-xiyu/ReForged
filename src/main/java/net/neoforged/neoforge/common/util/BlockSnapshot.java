@@ -2,7 +2,9 @@ package net.neoforged.neoforge.common.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -41,6 +43,20 @@ public class BlockSnapshot {
     public static BlockSnapshot create(Level level, BlockPos pos, int flag) {
         return new BlockSnapshot(level, pos, level.getBlockState(pos), level.getBlockState(pos),
                 getTileNBT(level, pos), flag);
+    }
+
+    public static BlockSnapshot create(ResourceKey<Level> dim, LevelAccessor levelAccessor, BlockPos pos) {
+        if (levelAccessor instanceof Level level) {
+            return create(level, pos);
+        }
+        throw new IllegalArgumentException("BlockSnapshot.create requires a Level instance, got " + levelAccessor.getClass().getName());
+    }
+
+    public static BlockSnapshot create(ResourceKey<Level> dim, LevelAccessor levelAccessor, BlockPos pos, int flag) {
+        if (levelAccessor instanceof Level level) {
+            return create(level, pos, flag);
+        }
+        throw new IllegalArgumentException("BlockSnapshot.create requires a Level instance, got " + levelAccessor.getClass().getName());
     }
 
     public Level getLevel() { return level; }

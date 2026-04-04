@@ -4,7 +4,9 @@ import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.xiyu.reforged.core.NeoForgeModLoader;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Constructor;
@@ -281,6 +283,17 @@ public final class NeoForgeEventBusShim {
         return event.isCancelable() && event.isCanceled();
     }
 
+    /**
+     * Untyped post entrypoint for synthetic mixin call sites where the JVM verifier
+     * cannot prove assignability to Forge Event at compile-time.
+     */
+    public boolean postUntyped(Object event) {
+        if (!(event instanceof Event forgeEvent)) {
+            return false;
+        }
+        return post(forgeEvent);
+    }
+
     // ─── Wrapper Bridge Logic ─────────────────────────────────────
 
     /**
@@ -312,23 +325,41 @@ public final class NeoForgeEventBusShim {
             final Constructor<?> ctor = wrapperCtor;
             final Consumer<Event> neoHandler = entry.handler();
 
-            MinecraftForge.EVENT_BUS.addListener(entry.priority(), entry.receiveCancelled(),
-                    forgeEventType, (Consumer) (forgeEvent -> {
-                        if (BRIDGE_DISPATCHING.get()) return;
-                        try {
-                            BRIDGE_DISPATCHING.set(true);
-                            Event neoEvent = (Event) ctor.newInstance(forgeEvent);
-                            neoHandler.accept(neoEvent);
-                        } catch (Throwable t) {
-                            LOGGER.debug("[ReForged] Bridge handler error for {} → {}: {}",
-                                    forgeEventType.getSimpleName(), neoEventType.getSimpleName(),
-                                    t.getCause() != null ? t.getCause().getMessage() : t.getMessage());
-                        } finally {
-                            BRIDGE_DISPATCHING.set(false);
-                        }
-                    }));
-            LOGGER.info("[ReForged] Bridged GAME bus handler: {} → Forge {}",
-                    neoEventType.getSimpleName(), forgeEventType.getSimpleName());
+            Consumer<Event> bridgeListener = forgeEvent -> {
+                if (BRIDGE_DISPATCHING.get()) return;
+                try {
+                    BRIDGE_DISPATCHING.set(true);
+                    Event neoEvent = (Event) ctor.newInstance(forgeEvent);
+                    neoHandler.accept(neoEvent);
+                } catch (Throwable t) {
+                    LOGGER.debug("[ReForged] Bridge handler error for {} → {}: {}",
+                            forgeEventType.getSimpleName(), neoEventType.getSimpleName(),
+                            t.getCause() != null ? t.getCause().getMessage() : t.getMessage());
+                } finally {
+                    BRIDGE_DISPATCHING.set(false);
+                }
+            };
+
+            // Determine which Forge bus to register on:
+            // IModBusEvent events are fired on the Forge MOD bus, not the GAME bus.
+            boolean isModBusEvent = net.minecraftforge.fml.event.IModBusEvent.class.isAssignableFrom(forgeEventType);
+            if (isModBusEvent) {
+                IEventBus modBus = NeoForgeModLoader.getForgeModBus();
+                if (modBus != null) {
+                    modBus.addListener(entry.priority(), entry.receiveCancelled(),
+                            forgeEventType, (Consumer) bridgeListener);
+                    LOGGER.info("[ReForged] Bridged GAME→MOD bus handler: {} → Forge {} (registered on MOD bus)",
+                            neoEventType.getSimpleName(), forgeEventType.getSimpleName());
+                } else {
+                    LOGGER.error("[ReForged] Cannot bridge mod bus event {} — Forge mod bus not yet available!",
+                            forgeEventType.getSimpleName());
+                }
+            } else {
+                MinecraftForge.EVENT_BUS.addListener(entry.priority(), entry.receiveCancelled(),
+                        forgeEventType, (Consumer) bridgeListener);
+                LOGGER.info("[ReForged] Bridged GAME bus handler: {} → Forge {}",
+                        neoEventType.getSimpleName(), forgeEventType.getSimpleName());
+            }
             return;
         }
 
