@@ -263,15 +263,27 @@ public final class NeoForgeEventBusAdapter {
             // We use the EXACT type as filter to avoid dispatching unrelated subtypes.
             if (Event.class.isAssignableFrom(neoType)) {
                 Class<? extends Event> eventType = (Class<? extends Event>) neoType;
+
+                // Route mod bus events to the Forge MOD bus (same logic as Case 1).
+                // NeoForge determines target bus per-method based on event type, not
+                // per-class annotation attribute. IModBusEvent → MOD bus, else → delegate.
+                boolean isModBusEvent = net.minecraftforge.fml.event.IModBusEvent.class.isAssignableFrom(eventType);
+                IEventBus targetBus = delegate;
+                if (isModBusEvent) {
+                    IEventBus modBus = NeoForgeModLoader.getForgeModBus();
+                    if (modBus != null) targetBus = modBus;
+                }
+
                 Object invokeTarget = target instanceof Class<?> ? null : target;
                 Class<?> finalNeoType = neoType;
-                delegate.addListener(priority, receiveCancelled, eventType, event -> {
+                targetBus.addListener(priority, receiveCancelled, eventType, event -> {
                     if (!finalNeoType.isInstance(event)) return;
                     try { method.invoke(invokeTarget, event); }
                     catch (Throwable t) { LOGGER.error("[ReForged] NeoForge handler error: {}", method.getName(), t); }
                 });
-                LOGGER.debug("[ReForged] Registered direct NeoForge @SubscribeEvent: {}.{}({})",
-                        method.getDeclaringClass().getSimpleName(), method.getName(), neoType.getSimpleName());
+                LOGGER.info("[ReForged] Registered direct NeoForge @SubscribeEvent: {}.{}({}){}",
+                        method.getDeclaringClass().getSimpleName(), method.getName(), neoType.getSimpleName(),
+                        isModBusEvent ? " (MOD bus)" : "");
                 return true;
             }
 

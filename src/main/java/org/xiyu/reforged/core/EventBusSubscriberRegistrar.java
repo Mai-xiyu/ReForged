@@ -18,10 +18,11 @@ import java.util.jar.JarFile;
  * Scans NeoForge mod JARs for classes annotated with {@code @EventBusSubscriber}
  * and registers their {@code @SubscribeEvent} methods on the appropriate event bus.
  *
- * <ul>
- *   <li>{@code bus = MOD} → registers on Forge's mod event bus</li>
- *   <li>{@code bus = GAME} (default) → registers on {@code MinecraftForge.EVENT_BUS}</li>
- * </ul>
+ * <p>NeoForge's {@code @EventBusSubscriber} does NOT have a {@code bus} attribute.
+ * Instead, NeoForge determines the target bus <b>per method</b> based on the event
+ * parameter type: events implementing {@code IModBusEvent} are routed to the MOD bus,
+ * all others to the GAME bus. This routing is handled inside
+ * {@link NeoForgeEventBusAdapter#registerEventHandler}.</p>
  *
  * <p>Respects the {@code value} (Dist) filter: CLIENT-only classes are skipped on servers.</p>
  */
