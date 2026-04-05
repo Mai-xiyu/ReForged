@@ -124,6 +124,8 @@ public final class BytecodeRewriter {
                 "dev/engine_room/flywheel/impl/extension/BlockEntityTypeExtension";
         private static final String BRIDGE =
                 "org/xiyu/reforged/bridge/FlywheelVisualizerBridge";
+        private static final String BAKED_MODEL_BRIDGE =
+                "org/xiyu/reforged/bridge/BakedModelBridge";
 
         // ── Create mixin accessor → MC target class mapping ────────────
         // Create's NeoForge Mixin config is not loaded by Forge's Sponge Mixin
@@ -331,6 +333,26 @@ public final class BytecodeRewriter {
                                 "(Lnet/neoforged/bus/api/IEventBus;Lnet/minecraftforge/eventbus/api/Event;)Lnet/minecraftforge/eventbus/api/Event;",
                                 false
                         );
+                        return;
+                    }
+
+                    // ── BakedModel.useAmbientOcclusion NeoForge→Forge redirect ──
+                    // NeoForge: useAmbientOcclusion(BlockState, ModelData, RenderType) → TriState
+                    // Forge:    useAmbientOcclusion(BlockState, RenderType) → boolean
+                    if ("net/minecraft/client/resources/model/BakedModel".equals(owner)
+                            && "useAmbientOcclusion".equals(mName)
+                            && !"()Z".equals(desc)) {
+                        // Convert INVOKEINTERFACE to INVOKESTATIC on BakedModelBridge;
+                        // prepend the receiver (BakedModel) as first static arg.
+                        String staticDesc = "(Lnet/minecraft/client/resources/model/BakedModel;"
+                                + desc.substring(1);
+                        LOGGER.debug("[ReForged] Redirecting BakedModel.useAmbientOcclusion {} → {}",
+                                desc, staticDesc);
+                        super.visitMethodInsn(Opcodes.INVOKESTATIC,
+                                BAKED_MODEL_BRIDGE,
+                                "useAmbientOcclusion",
+                                staticDesc,
+                                false);
                         return;
                     }
 

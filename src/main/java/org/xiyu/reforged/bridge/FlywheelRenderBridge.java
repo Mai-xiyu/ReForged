@@ -82,6 +82,7 @@ public final class FlywheelRenderBridge {
 
     // Per-frame mutable state (only read/written on render thread)
     private static Object currentRenderContext;
+    private static int beginRenderLogCount = 0;
 
     private FlywheelRenderBridge() {}
 
@@ -243,9 +244,13 @@ public final class FlywheelRenderBridge {
             if (visMgr != null) {
                 Object dispatcher = mVMRenderDispatcher.invoke(visMgr);
                 mOnStartLevelRender.invoke(dispatcher, renderCtx);
+            } else if (beginRenderLogCount++ < 3) {
+                LOGGER.warn("[ReForged] FlywheelRenderBridge: beginRender — VisualizationManager.get(level) returned null");
             }
         } catch (Throwable t) {
-            LOGGER.debug("[ReForged] FlywheelRenderBridge: beginRender failed: {}", t.getMessage());
+            if (beginRenderLogCount++ < 5) {
+                LOGGER.warn("[ReForged] FlywheelRenderBridge: beginRender failed: {}", t.getMessage(), t);
+            }
             currentRenderContext = null;
         }
     }

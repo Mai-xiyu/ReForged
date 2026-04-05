@@ -41,13 +41,18 @@ public abstract class FlywheelLevelRendererMixin {
     /**
      * Hook: start of rendering — create Flywheel's RenderContext and signal frame start.
      * Original: flywheel$beginRender in Flywheel's LevelRendererMixin.
-     * Injection point: after LevelLightEngine.runLightUpdates() return in renderLevel().
+     * Injection point: after LevelLightEngine.runLightUpdates() call in renderLevel().
+     *
+     * <p>Note: In Forge 1.21-51.0.33, the return value of runLightUpdates() is discarded
+     * (pop instruction) rather than stored, so INVOKE_ASSIGN does not match.
+     * Using INVOKE + AFTER instead.</p>
      */
     @Inject(
             method = "renderLevel",
             at = @At(
-                    value = "INVOKE_ASSIGN",
-                    target = "Lnet/minecraft/world/level/lighting/LevelLightEngine;runLightUpdates()I"
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/level/lighting/LevelLightEngine;runLightUpdates()I",
+                    shift = At.Shift.AFTER
             ),
             remap = false
     )
