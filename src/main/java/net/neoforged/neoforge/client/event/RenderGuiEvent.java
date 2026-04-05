@@ -14,6 +14,9 @@ public abstract class RenderGuiEvent extends Event {
     private final GuiGraphics guiGraphics;
     private final DeltaTracker partialTick;
 
+    /** No-arg ctor required by Forge EventListenerHelper to compute ListenerList */
+    protected RenderGuiEvent() { this(null, null); }
+
     protected RenderGuiEvent(GuiGraphics guiGraphics, DeltaTracker partialTick) {
         this.guiGraphics = guiGraphics;
         this.partialTick = partialTick;
@@ -23,10 +26,12 @@ public abstract class RenderGuiEvent extends Event {
     public DeltaTracker getPartialTick() { return partialTick; }
 
     public static class Pre extends RenderGuiEvent {
+        public Pre() { super(); }
         public Pre(GuiGraphics g, DeltaTracker pt) { super(g, pt); }
     }
 
     public static class Post extends RenderGuiEvent {
+        public Post() { super(); }
         public Post(GuiGraphics g, DeltaTracker pt) { super(g, pt); }
     }
 }

@@ -233,6 +233,11 @@ public final class NeoForgeEventBusAdapter {
                     try {
                         Object neoEvent = wrapperCtor.newInstance(forgeEvent);
                         method.invoke(invokeTarget, neoEvent);
+                        // Propagate cancellation from NeoForge wrapper back to Forge event
+                        if (neoEvent instanceof Event neoEvt && neoEvt.isCanceled()
+                                && forgeEvent.isCancelable()) {
+                            forgeEvent.setCanceled(true);
+                        }
                     } catch (Throwable t) {
                         LOGGER.error("[ReForged] NeoForge wrapped handler error: {}.{}",
                                 method.getDeclaringClass().getSimpleName(), method.getName(), t);
@@ -388,6 +393,11 @@ public final class NeoForgeEventBusAdapter {
                 try {
                     Object neoEvent = finalWrapperCtor.newInstance(forgeEvent);
                     ((Consumer<Object>) finalConsumer).accept(neoEvent);
+                    // Propagate cancellation from NeoForge wrapper back to Forge event
+                    if (neoEvent instanceof Event neoEvt && neoEvt.isCanceled()
+                            && forgeEvent.isCancelable()) {
+                        forgeEvent.setCanceled(true);
+                    }
                 } catch (Throwable t) {
                     String message = t.getMessage() != null ? t.getMessage() : "";
                     boolean balmConfigNull = message.contains("config") && message.contains("null")

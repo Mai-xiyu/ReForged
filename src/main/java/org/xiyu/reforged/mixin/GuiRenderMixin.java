@@ -8,7 +8,6 @@ import net.minecraftforge.common.MinecraftForge;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import org.xiyu.reforged.bridge.NeoForgeEventBusAdapter;
-import org.xiyu.reforged.shim.NeoForgeShim;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -46,31 +45,19 @@ public class GuiRenderMixin {
     /**
      * Fire RenderGuiEvent.Post after all GUI layers have been rendered.
      * This allows NeoForge mods (Jade, Create, etc.) to render their HUD overlays.
-     *
-     * <p>We dispatch to THREE targets to ensure all listener registration paths are covered:
-     * <ol>
-     *   <li>{@code MinecraftForge.EVENT_BUS} — direct {@code addListener(RenderGuiEvent.Post, ...)}
-     *       registrations end up here (e.g. Jade's overlay)</li>
-     *   <li>{@code NeoForgeEventBusAdapter.dispatchFallback()} — listeners that failed Forge bus
-     *       registration end up here (e.g. Flywheel custom events)</li>
-     *   <li>{@code EVENT_BUS_SHIM} — local shim bus for any direct shim registrations</li>
-     * </ol>
      */
+
     @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V", at = @At("RETURN"), remap = false)
     private void reforged$onRenderGuiPost(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         RenderGuiEvent.Post event = new RenderGuiEvent.Post(guiGraphics, deltaTracker);
 
-        // 1. Post to Forge EVENT_BUS — Jade and Create handlers registered via the adapter proxy
+        // Dispatch via Forge EVENT_BUS (listeners registered directly on Forge bus)
         try {
             MinecraftForge.EVENT_BUS.post(event);
         } catch (Throwable ignored) {
-            // Silently handle — event may not have proper ListenerList setup
         }
 
-        // 2. Dispatch to fallback listeners (handlers that couldn't register on Forge bus)
+        // Dispatch to fallback listeners (handlers that couldn't register on Forge bus)
         NeoForgeEventBusAdapter.dispatchFallback(event);
-
-        // 3. Post to the shim bus for any direct shim registrations
-        NeoForgeShim.EVENT_BUS_SHIM.post(event);
     }
 }
