@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.DispenserBlock;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(DispenserBlock.class)
+@Mixin(value = DispenserBlock.class, remap = false)
 public abstract class DispenserBlockAccessorMixin {
     @Shadow
     protected abstract DispenseItemBehavior getDispenseMethod(Level level, ItemStack stack);

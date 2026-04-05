@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *   <li>Fire {@link RenderGuiEvent.Post} so NeoForge mods like Jade can render HUD overlays</li>
  * </ul>
  */
-@Mixin(Gui.class)
+@Mixin(value = Gui.class, remap = false)
 public class GuiRenderMixin {
 
     @Shadow @Final private LayeredDraw layers;

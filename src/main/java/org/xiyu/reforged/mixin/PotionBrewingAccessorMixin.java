@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.List;
 
-@Mixin(PotionBrewing.class)
+@Mixin(value = PotionBrewing.class, remap = false)
 public abstract class PotionBrewingAccessorMixin {
     @Shadow @Final public List<PotionBrewing.Mix<Potion>> potionMixes;
     @Shadow @Final public List<PotionBrewing.Mix<Item>> containerMixes;

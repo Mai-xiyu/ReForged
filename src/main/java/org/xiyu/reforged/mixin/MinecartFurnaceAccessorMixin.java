@@ -4,7 +4,7 @@ import net.minecraft.world.entity.vehicle.MinecartFurnace;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(MinecartFurnace.class)
+@Mixin(value = MinecartFurnace.class, remap = false)
 public abstract class MinecartFurnaceAccessorMixin {
     @Shadow private int fuel;
 

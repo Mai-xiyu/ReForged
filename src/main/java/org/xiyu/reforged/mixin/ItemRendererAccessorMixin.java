@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.Shadow;
  * Makes ItemRenderer implement Ponder's ItemRendererAccessor interface,
  * exposing the textureManager field.
  */
-@Mixin(ItemRenderer.class)
+@Mixin(value = ItemRenderer.class, remap = false)
 public abstract class ItemRendererAccessorMixin implements ItemRendererAccessor {
 
     @Shadow @Final

@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.Shadow;
  * Implements Ponder's {@link ScreenAccessor} on {@link Screen} so that
  * NeoForge mod code can cast Screen instances to ScreenAccessor.
  */
-@Mixin(Screen.class)
+@Mixin(value = Screen.class, remap = false)
 public abstract class ScreenAccessorImplMixin implements ScreenAccessor {
     @Shadow
     private List<Renderable> renderables;

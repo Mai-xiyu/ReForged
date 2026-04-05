@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.Map;
 
-@Mixin(MappedRegistry.class)
+@Mixin(value = MappedRegistry.class, remap = false)
 public abstract class MappedRegistryAccessorMixin<T> {
     @Shadow @Final private Reference2IntMap<T> toId;
     @Shadow @Final private Map<T, Holder.Reference<T>> byValue;

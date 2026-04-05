@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
  * Makes BufferBuilder implement Ponder's BufferBuilderAccessor,
  * exposing the vertices count.
  */
-@Mixin(BufferBuilder.class)
+@Mixin(value = BufferBuilder.class, remap = false)
 public abstract class BufferBuilderAccessorMixin implements BufferBuilderAccessor {
 
     @Shadow

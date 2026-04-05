@@ -5,7 +5,7 @@ import net.minecraft.client.DeltaTracker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(DeltaTracker.Timer.class)
+@Mixin(value = DeltaTracker.Timer.class, remap = false)
 public abstract class TimerAccessorMixin implements TimerAccessor {
 
     @Shadow

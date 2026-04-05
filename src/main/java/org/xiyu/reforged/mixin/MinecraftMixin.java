@@ -27,7 +27,7 @@ import java.util.Optional;
  * <p>ClientTickEvent.Pre/Post are bridged automatically via wrapper constructors on
  * Forge's TickEvent.ClientTickEvent, so they do not need explicit injection here.</p>
  */
-@Mixin(Minecraft.class)
+@Mixin(value = Minecraft.class, remap = false)
 public abstract class MinecraftMixin {
 
     @Shadow(remap = false)

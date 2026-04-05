@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(HumanoidArmorLayer.class)
+@Mixin(value = HumanoidArmorLayer.class, remap = false)
 public abstract class HumanoidArmorLayerAccessorMixin {
     @Shadow @Final private HumanoidModel innerModel;
     @Shadow @Final private HumanoidModel outerModel;

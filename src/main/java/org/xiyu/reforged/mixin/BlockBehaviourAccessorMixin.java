@@ -10,7 +10,7 @@ import org.xiyu.reforged.shim.create.BlockBehaviourAccessor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(BlockBehaviour.class)
+@Mixin(value = BlockBehaviour.class, remap = false)
 public abstract class BlockBehaviourAccessorMixin implements BlockBehaviourAccessor {
 
     @Shadow

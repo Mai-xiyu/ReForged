@@ -4,7 +4,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(MobEffectInstance.class)
+@Mixin(value = MobEffectInstance.class, remap = false)
 public abstract class MobEffectInstanceAccessorMixin {
     @Shadow private MobEffectInstance hiddenEffect;
 

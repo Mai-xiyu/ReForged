@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.Shadow;
  * The accessor interface cast is handled by BytecodeRewriter
  * (INVOKEINTERFACE → INVOKEVIRTUAL).
  */
-@Mixin(ShapedRecipe.class)
+@Mixin(value = ShapedRecipe.class, remap = false)
 public abstract class ShapedRecipeAccessorMixin {
 
     @Shadow @Final

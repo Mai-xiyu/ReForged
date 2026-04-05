@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
  * Makes ClientPacketListener implement Ponder's ClientPacketListenerAccessor,
  * exposing the serverChunkRadius field.
  */
-@Mixin(ClientPacketListener.class)
+@Mixin(value = ClientPacketListener.class, remap = false)
 public abstract class ClientPacketListenerAccessorMixin implements ClientPacketListenerAccessor {
 
     @Shadow

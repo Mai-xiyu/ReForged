@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
  * Makes GameRenderer implement Ponder's GameRendererAccessor,
  * invoking the private getFov method.
  */
-@Mixin(GameRenderer.class)
+@Mixin(value = GameRenderer.class, remap = false)
 public abstract class GameRendererAccessorMixin implements GameRendererAccessor {
 
     @Shadow

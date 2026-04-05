@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  * returning OptionalInt. In Forge 1.21, only {@code IForgeServerPlayer.openMenu(MenuProvider, Consumer<FriendlyByteBuf>)}
  * exists, returning void. This bridges the gap.</p>
  */
-@Mixin(Player.class)
+@Mixin(value = Player.class, remap = false)
 public abstract class PlayerOpenMenuMixin {
 
     @Shadow

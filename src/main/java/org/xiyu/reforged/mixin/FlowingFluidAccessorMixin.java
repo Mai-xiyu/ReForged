@@ -8,7 +8,7 @@ import net.minecraft.world.level.material.FluidState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(FlowingFluid.class)
+@Mixin(value = FlowingFluid.class, remap = false)
 public abstract class FlowingFluidAccessorMixin {
     @Shadow
     protected abstract FluidState getNewLiquid(Level level, BlockPos pos, BlockState state);

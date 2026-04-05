@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(ServerLevel.class)
+@Mixin(value = ServerLevel.class, remap = false)
 public abstract class ServerLevelAccessorMixin {
     @Shadow @Final EntityTickList entityTickList;
 

@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.function.Function;
 
-@Mixin(Font.class)
+@Mixin(value = Font.class, remap = false)
 public abstract class FontAccessorMixin {
     @Shadow @Final private Function<ResourceLocation, FontSet> fonts;
 

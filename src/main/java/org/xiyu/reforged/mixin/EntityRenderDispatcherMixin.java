@@ -19,7 +19,7 @@ import java.util.Map;
  * and injects Create's {@code create$getRenderers()} accessor method.
  * The accessor interface cast is handled by BytecodeRewriter (INVOKEINTERFACE → INVOKEVIRTUAL).
  */
-@Mixin(EntityRenderDispatcher.class)
+@Mixin(value = EntityRenderDispatcher.class, remap = false)
 public abstract class EntityRenderDispatcherMixin {
 
     @Shadow @Final

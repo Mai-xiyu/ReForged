@@ -5,7 +5,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(LevelRenderer.class)
+@Mixin(value = LevelRenderer.class, remap = false)
 public abstract class LevelRendererAccessorMixin {
     @Shadow private Frustum cullingFrustum;
     @Shadow private Frustum capturedFrustum;

@@ -4,7 +4,7 @@ import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(MouseHandler.class)
+@Mixin(value = MouseHandler.class, remap = false)
 public abstract class MouseHandlerAccessorMixin {
     @Shadow private double xpos;
     @Shadow private double ypos;

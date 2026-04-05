@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(ParticleEngine.class)
+@Mixin(value = ParticleEngine.class, remap = false)
 public abstract class ParticleEngineAccessorMixin implements ParticleEngineAccessor {
     @Shadow
     @Final
