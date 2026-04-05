@@ -53,12 +53,12 @@ public class ModContainer {
 
     /**
      * Get the mod info.
-     * Returns Forge's IModInfo directly since after bytecode remapping,
-     * NeoForge callers expect {@code net.minecraftforge.forgespi.language.IModInfo}
-     * as the return type (neoforgespi → forgespi remapping).
+     * Returns NeoForge's IModInfo (identity-mapped) so both TRANSFORMER-loaded callers
+     * (e.g. Jade, un-rewritten) and NeoModClassLoader-loaded callers (rewritten with
+     * IModInfo identity mapping) resolve the same descriptor.
      */
-    public net.minecraftforge.forgespi.language.IModInfo getModInfo() {
-        return delegate.getModInfo();
+    public net.neoforged.neoforgespi.language.IModInfo getModInfo() {
+        return net.neoforged.neoforgespi.language.IModInfo.wrap(delegate.getModInfo());
     }
 
     /**

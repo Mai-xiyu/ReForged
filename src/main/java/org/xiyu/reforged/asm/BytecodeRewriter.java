@@ -4,8 +4,12 @@ import com.mojang.logging.LogUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.slf4j.Logger;
 
@@ -204,14 +208,67 @@ public final class BytecodeRewriter {
             ALL_ACCESSOR_TARGETS.putAll(FLYWHEEL_ACCESSOR_TARGETS);
         }
 
+        /**
+         * Rewrite accessor interface types to their MC target class types in descriptors.
+         * E.g. {@code (Ldev/engine_room/flywheel/backend/mixin/light/LayerLightSectionStorageAccessor;J)V}
+         * becomes {@code (Lnet/minecraft/world/level/lighting/LayerLightSectionStorage;J)V}.
+         */
+        private static String rewriteAccessorDescriptor(String descriptor) {
+            if (descriptor == null) return null;
+            String result = descriptor;
+            for (Map.Entry<String, String> e : ALL_ACCESSOR_TARGETS.entrySet()) {
+                String from = "L" + e.getKey() + ";";
+                if (result.contains(from)) {
+                    result = result.replace(from, "L" + e.getValue() + ";");
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Rewrite accessor types in INVOKEDYNAMIC bootstrap method args (for lambdas).
+         */
+        private static Object[] rewriteBootstrapArgs(Object[] bsmArgs) {
+            Object[] result = new Object[bsmArgs.length];
+            for (int i = 0; i < bsmArgs.length; i++) {
+                Object arg = bsmArgs[i];
+                if (arg instanceof Handle h) {
+                    String hDesc = rewriteAccessorDescriptor(h.getDesc());
+                    if (!hDesc.equals(h.getDesc())) {
+                        result[i] = new Handle(h.getTag(), h.getOwner(), h.getName(), hDesc, h.isInterface());
+                    } else {
+                        result[i] = arg;
+                    }
+                } else if (arg instanceof Type t && t.getSort() == Type.METHOD) {
+                    String tDesc = rewriteAccessorDescriptor(t.getDescriptor());
+                    if (!tDesc.equals(t.getDescriptor())) {
+                        result[i] = Type.getMethodType(tDesc);
+                    } else {
+                        result[i] = arg;
+                    }
+                } else {
+                    result[i] = arg;
+                }
+            }
+            return result;
+        }
+
         MethodCallRedirector(ClassVisitor cv) {
             super(Opcodes.ASM9, cv);
         }
 
         @Override
+        public FieldVisitor visitField(int access, String name, String descriptor,
+                                       String signature, Object value) {
+            return super.visitField(access, name, rewriteAccessorDescriptor(descriptor),
+                                    signature, value);
+        }
+
+        @Override
         public MethodVisitor visitMethod(int access, String name, String descriptor,
                                          String signature, String[] exceptions) {
-            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            String newDesc = rewriteAccessorDescriptor(descriptor);
+            MethodVisitor mv = super.visitMethod(access, name, newDesc, signature, exceptions);
             return new MethodVisitor(Opcodes.ASM9, mv) {
 
                 // ── Replace Create accessor types in stack map frames ──────
@@ -259,11 +316,14 @@ public final class BytecodeRewriter {
                 @Override
                 public void visitMethodInsn(int opcode, String owner, String mName,
                                             String mDescriptor, boolean isInterface) {
+                    // Rewrite accessor types in method descriptors throughout
+                    String desc = rewriteAccessorDescriptor(mDescriptor);
+
                     // ── IEventBus.post redirect ────────────────────────────
                     if (opcode == Opcodes.INVOKEINTERFACE
                             && "net/neoforged/bus/api/IEventBus".equals(owner)
                             && "post".equals(mName)
-                            && "(Lnet/minecraftforge/eventbus/api/Event;)Lnet/minecraftforge/eventbus/api/Event;".equals(mDescriptor)) {
+                            && "(Lnet/minecraftforge/eventbus/api/Event;)Lnet/minecraftforge/eventbus/api/Event;".equals(desc)) {
                         super.visitMethodInsn(
                                 Opcodes.INVOKESTATIC,
                                 "org/xiyu/reforged/bridge/EventBusHelper",
@@ -318,7 +378,7 @@ public final class BytecodeRewriter {
                         String target = CREATE_ACCESSOR_TARGETS.get(owner);
                         if (target != null) {
                             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                                    target, mName, mDescriptor, false);
+                                    target, mName, desc, false);
                             return;
                         }
                     }
@@ -329,12 +389,37 @@ public final class BytecodeRewriter {
                         String target = FLYWHEEL_ACCESSOR_TARGETS.get(owner);
                         if (target != null) {
                             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                                    target, mName, mDescriptor, false);
+                                    target, mName, desc, false);
                             return;
                         }
                     }
 
-                    super.visitMethodInsn(opcode, owner, mName, mDescriptor, isInterface);
+                    super.visitMethodInsn(opcode, owner, mName, desc, isInterface);
+                }
+
+                // ── Rewrite accessor types in INVOKEDYNAMIC (lambdas) ──────
+                @Override
+                public void visitInvokeDynamicInsn(String name, String descriptor,
+                                                    Handle bsmHandle, Object... bsmArgs) {
+                    String newDesc = rewriteAccessorDescriptor(descriptor);
+                    Object[] newArgs = rewriteBootstrapArgs(bsmArgs);
+                    super.visitInvokeDynamicInsn(name, newDesc, bsmHandle, newArgs);
+                }
+
+                // ── Rewrite accessor types in field access descriptors ─────
+                @Override
+                public void visitFieldInsn(int opcode, String owner, String name,
+                                           String descriptor) {
+                    super.visitFieldInsn(opcode, owner, name, rewriteAccessorDescriptor(descriptor));
+                }
+
+                // ── Rewrite accessor types in local variable debug info ────
+                @Override
+                public void visitLocalVariable(String name, String descriptor,
+                                               String signature, Label start,
+                                               Label end, int index) {
+                    super.visitLocalVariable(name, rewriteAccessorDescriptor(descriptor),
+                                             signature, start, end, index);
                 }
             };
         }

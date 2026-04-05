@@ -367,6 +367,26 @@
       "to": "net.neoforged.neoforge.registries.NeoForgeRegistries"
     },
     {
+      "comment": "ClientHooks — keep identity; ReForged provides shim at net.neoforged.neoforge.client.ClientHooks",
+      "from": "net.neoforged.neoforge.client.ClientHooks",
+      "to": "net.neoforged.neoforge.client.ClientHooks"
+    },
+    {
+      "comment": "ModFileScanData — keep identity; Jade loadComplete accesses this from ReForged's shim layer",
+      "from": "net.neoforged.neoforgespi.language.ModFileScanData",
+      "to": "net.neoforged.neoforgespi.language.ModFileScanData"
+    },
+    {
+      "comment": "IModInfo — keep identity; TRANSFORMER-loaded callers (Jade) expect NeoForge return type from ModContainer.getModInfo()",
+      "from": "net.neoforged.neoforgespi.language.IModInfo",
+      "to": "net.neoforged.neoforgespi.language.IModInfo"
+    },
+    {
+      "comment": "IModFileInfo — keep identity; consistent with IModInfo identity (IModInfo.getOwningFile() returns this type)",
+      "from": "net.neoforged.neoforgespi.language.IModFileInfo",
+      "to": "net.neoforged.neoforgespi.language.IModFileInfo"
+    },
+    {
       "comment": "IConfigScreenFactory — keep NeoForge shim type",
       "from": "net.neoforged.neoforge.client.gui.IConfigScreenFactory",
       "to": "net.neoforged.neoforge.client.gui.IConfigScreenFactory"
