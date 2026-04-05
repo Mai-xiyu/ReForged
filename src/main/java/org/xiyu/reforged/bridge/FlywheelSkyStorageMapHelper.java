@@ -1,4 +1,4 @@
-package org.xiyu.reforged.mixin;
+package org.xiyu.reforged.bridge;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 

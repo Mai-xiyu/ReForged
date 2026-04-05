@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.xiyu.reforged.bridge.FlywheelSkyStorageMapHelper;
 
 /**
  * Injects Flywheel's SkyDataLayerStorageMapAccessor methods:

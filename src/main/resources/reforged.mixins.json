@@ -62,8 +62,7 @@
         "FlywheelLevelExtensionMixin",
         "FlywheelLayerLightStorageAccessorMixin",
         "FlywheelLightEngineAccessorMixin",
-        "FlywheelSkyDataLayerStorageMapAccessorMixin",
-        "FlywheelSkyLightSectionStorageMixin"
+        "FlywheelSkyDataLayerStorageMapAccessorMixin"
     ],
     "client": [
         "ModListScreenMixin",
